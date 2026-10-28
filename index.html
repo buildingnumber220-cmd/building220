@@ -77,6 +77,9 @@ input:focus{border-color:var(--ac)}
 .stat b{display:block;font-size:16px}.stat span{font-size:12px;opacity:.9}
 
 /* announcement */
+.qt{background:var(--card);border:1px solid var(--br);border-radius:20px;padding:20px 18px;margin-bottom:14px;box-shadow:var(--sh);text-align:center}
+.qt .q{font-size:18px;line-height:2;font-weight:600}
+.qt .qs{margin-top:8px;font-size:13px;color:var(--mut)}
 .note{background:var(--warnbg);color:var(--warn);border-radius:16px;padding:12px 14px;margin-bottom:14px;font-size:15px;font-weight:500;display:flex;gap:10px;align-items:flex-start;white-space:pre-line}
 
 /* items */
@@ -99,11 +102,23 @@ input:focus{border-color:var(--ac)}
 .prow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--br)}.pn{font-weight:700;font-size:15px}.pa{color:var(--ok);font-weight:700;font-size:15px}
 .payinfo{white-space:pre-line;background:var(--bg);border-radius:14px;padding:12px;font-size:15px;line-height:1.7}
 .copy{margin-top:10px;width:100%;padding:12px;border-radius:12px;border:1.5px dashed var(--ac);background:transparent;color:var(--ac);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer}
+.pm{border:1.5px solid var(--br);border-radius:16px;padding:12px 14px;margin-bottom:10px;background:var(--bg)}
+.pm .ty{font-size:13px;color:var(--mut);font-weight:700}
+.pm .nu{font-size:22px;font-weight:800;letter-spacing:1px;direction:ltr;text-align:right;margin:4px 0 0;word-break:break-all;user-select:all}
+.pm .copy{margin-top:8px;padding:10px}
 .fund{display:flex;align-items:center;gap:12px}
 .fund .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--okbg);font-size:22px}
 .fund b{font-size:20px;display:block}
 .out{display:block;margin:6px auto 0;background:none;border:0;color:var(--mut);font-family:inherit;font-size:14px;cursor:pointer;padding:10px}
 #view>.hero:first-child{margin-top:-34px}
+/* amount modal */
+.ov{position:fixed;inset:0;background:rgba(10,14,30,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:0 12px max(12px,env(safe-area-inset-bottom))}
+.sheet{width:100%;max-width:520px;background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh);animation:up .25s ease both}
+.sheet h2{margin-bottom:6px}
+.sheet .btn{margin-top:14px}
+.sheet .cancel{display:block;width:100%;margin-top:6px;background:none;border:0;color:var(--mut);font-family:inherit;font-size:15px;padding:10px;cursor:pointer}
+.chip.rej{background:var(--badbg);color:var(--bad)}
+.rejnote{margin-top:8px;background:var(--badbg);color:var(--bad);border-radius:12px;padding:9px 12px;font-size:14px;white-space:pre-line}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -128,7 +143,7 @@ input:focus{border-color:var(--ac)}
 
   <div id="login" class="card login">
     <h2>تسجيل الدخول</h2>
-    <div class="mut">ادخل بيانات شقتك لمتابعة مدفوعاتك</div>
+    <div class="mut">ادخل بيانات شقتك لمتابعة مساهماتك</div>
     <div class="field"><label>رقم الشقة</label><input id="apt" inputmode="numeric" autocomplete="off"></div>
     <div class="field"><label>الرقم السري</label><input id="pin" type="password" inputmode="numeric" autocomplete="off"></div>
     <button id="go" class="btn">دخول</button>
@@ -188,6 +203,62 @@ function waLink(phone, text) {
   return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(text);
 }
 
+// لون كارت الحالة يتدرج: أحمر ← برتقالي ← ذهبي ← أخضر مع نسبة السداد
+function heroColors(p) {
+  const st = [[0, 4, 72, 47], [40, 22, 85, 46], [70, 48, 80, 38], [100, 145, 62, 34]];
+  let i = 0; while (i < st.length - 2 && p > st[i + 1][0]) i++;
+  const a = st[i], b = st[i + 1], t = Math.max(0, Math.min(1, (p - a[0]) / (b[0] - a[0])));
+  const m = k => a[k] + (b[k] - a[k]) * t;
+  const h = Math.round(m(1)), s = Math.round(m(2)), l = Math.round(m(3));
+  return 'linear-gradient(135deg,hsl(' + h + ',' + s + '%,' + l + '%),hsl(' + (h + 12) + ',' + s + '%,' + (l + 10) + '%))';
+}
+
+const ERR = { amount: 'المبلغ غير صحيح أو أكبر من المتبقي.', done: 'هذا البند مكتمل بالفعل.', file: 'الصورة غير مقبولة، جرّب صورة أخرى.' };
+
+function askAmount(b) {
+  const rest = Number(b.dataset.rest), desc = b.dataset.desc, code = b.dataset.code;
+  const ov = document.createElement('div');
+  ov.className = 'ov';
+  ov.innerHTML = '<div class="sheet"><h2>' + esc(desc) + '</h2>' +
+    '<div class="mut">المتبقي ' + money(rest) + '. اكتب المبلغ الذي حوّلته (يمكن أن يكون جزءاً منه).</div>' +
+    '<div class="field"><label>المبلغ بالجنيه</label><input id="amt" inputmode="decimal" autocomplete="off" value="' + rest + '"></div>' +
+    '<div id="aerr" class="err"></div>' +
+    '<button class="btn" id="pick">📎 اختيار صورة الإيصال ورفعها</button>' +
+    '<button class="cancel" id="cx">إلغاء</button></div>';
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  $('cx').onclick = close;
+  ov.onclick = e => { if (e.target === ov) close(); };
+  $('pick').onclick = () => {
+    const amt = Number(nd($('amt').value).replace(/[٫,]/g, '.'));
+    if (!isFinite(amt) || amt <= 0 || amt > rest) { $('aerr').textContent = 'اكتب مبلغاً أكبر من صفر ولا يزيد عن ' + money(rest) + '.'; return; }
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async () => {
+      const f = inp.files[0];
+      if (!f) return;
+      $('pick').disabled = true; $('pick').textContent = 'جاري رفع الإيصال...'; $('aerr').textContent = '';
+      let msg = 'تعذر الرفع، حاول مرة أخرى.';
+      try {
+        const data = await compress(f);
+        const r = await fetch(API_URL, {
+          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'upload', apt: CUR.a, pin: CUR.p, did: DID, code: code, amount: amt, mime: 'image/jpeg', data })
+        });
+        const x = await r.json();
+        if (x.ok) {
+          LAST = { code: code, msg: 'شقة ' + CUR.a + ': ساهمت بمبلغ ' + amt + ' جنيه في بند "' + desc + '". رفعت الإيصال في الموقع.' };
+          close(); login(CUR.a, CUR.p); return;
+        }
+        if (ERR[x.error]) msg = ERR[x.error];
+      } catch (e) {}
+      $('aerr').textContent = msg;
+      $('pick').disabled = false; $('pick').textContent = '📎 اختيار صورة الإيصال ورفعها';
+    };
+    inp.click();
+  };
+}
+
 function render(d) {
   DATA = d;
   const s = d.settings || {};
@@ -196,46 +267,71 @@ function render(d) {
   const today = new Date().toISOString().slice(0, 10);
   let h = '';
 
-  h += '<div class="hero ' + (paidAll ? 'ok' : 'bad') + '">' +
+  h += '<div class="hero ' + (paidAll ? 'ok' : 'bad') + '" style="background:' + heroColors(pct) + '">' +
        '<div class="apt">شقة ' + esc(d.apt) + '</div>' +
-       '<div class="big">' + (paidAll ? 'مدفوع بالكامل ✓' : money(d.remaining)) + '</div>' +
-       '<div class="sub">' + (paidAll ? 'شكراً لالتزامك' : 'المتبقي عليك') + '</div>' +
+       '<div class="big">' + (paidAll ? 'اكتمل إسهامك ✓' : money(d.remaining)) + '</div>' +
+       '<div class="sub">' + (paidAll ? 'شكراً لمساهمتك في عمارتنا' : 'إسهامك المتبقي') + '</div>' +
        '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
-       '<div class="stats">' +
-         '<div class="stat"><b>' + money(d.required) + '</b><span>المطلوب</span></div>' +
-         '<div class="stat"><b>' + money(d.paid) + '</b><span>المدفوع</span></div>' +
-         '<div class="stat"><b>' + pct + '%</b><span>نسبة السداد</span></div>' +
-       '</div></div>';
+       (paidAll ? '' : '<div class="stats">' +
+         '<div class="stat"><b>' + money(d.required) + '</b><span>الإسهام المقرر</span></div>' +
+         '<div class="stat"><b>' + money(d.paid) + '</b><span>ما أسهمت به</span></div>' +
+         '<div class="stat"><b>' + pct + '%</b><span>نسبة الإنجاز</span></div>' +
+       '</div>') + '</div>';
+
+  if (d.quote) h += '<div class="qt"><div class="q">' + (d.quote.v ? '﴿' + esc(d.quote.t) + '﴾' : esc(d.quote.t)) + '</div><div class="qs">' + esc(d.quote.s) + '</div></div>';
 
   if (s.announcement) h += '<div class="note"><span>📢</span><span>' + esc(s.announcement) + '</span></div>';
 
-  h += '<div class="card"><h2>التفاصيل</h2>';
+  h += '<div class="card"><h2>المطلوب حالياً</h2>';
+  if (!d.items.length) h += '<div class="mut">لا يوجد إسهام مطلوب حالياً ✓</div>';
   d.items.forEach(i => {
     const ok = i.remaining <= 0;
     const late = !ok && i.due && i.due < today;
     const p = i.amount > 0 ? Math.min(100, Math.round(i.paid / i.amount * 100)) : 100;
     h += '<div class="item"><div class="top"><span class="name">' + esc(i.desc) + '</span>' +
          '<span class="chip ' + (ok ? 'ok' : (i.pending ? 'wait' : (late ? 'late' : 'bad'))) + '">' +
-         (ok ? 'مدفوع ✓' : (i.pending ? 'في انتظار التأكيد ⏳' : (late ? 'متأخر · ' : '') + money(i.remaining))) + '</span></div>' +
-         '<div class="meta">استحقاق ' + esc(i.due) + ' · المطلوب ' + money(i.amount) + ' · المدفوع ' + money(i.paid) + '</div>' +
+         (ok ? 'مكتمل ✓' : (i.pending ? 'في انتظار التأكيد ⏳' : (late ? 'تأخر · ' : '') + money(i.remaining))) + '</span></div>' +
+         '<div class="meta">الموعد ' + esc(i.due) + ' · الإسهام ' + money(i.amount) + ' · ما أسهمت به ' + money(i.paid) + '</div>' +
          '<div class="pb"><i style="width:' + p + '%"></i></div>';
     if (!ok && i.pending) {
-      h += '<div class="mut" style="margin-top:8px">تم رفع الإيصال، بانتظار تأكيد أمين الصندوق.</div>';
+      h += '<div class="mut" style="margin-top:8px">تم رفع إيصال بمبلغ ' + money(i.pendingAmount) + '، بانتظار تأكيد أمين الصندوق.</div>';
       if (LAST && LAST.code === String(i.code) && s.treasurer_phone)
         h += '<a class="paid-btn" target="_blank" rel="noopener" href="' + waLink(s.treasurer_phone, LAST.msg) + '">📲 أبلغ أمين الصندوق على واتساب</a>';
     } else if (!ok && s.treasurer_phone) {
-      const msg = 'شقة ' + d.apt + ': دفعت ' + i.remaining + ' جنيه لبند "' + i.desc + '". رفعت الإيصال في الموقع.';
-      h += '<button class="paid-btn" data-code="' + esc(i.code) + '" data-msg="' + esc(msg) + '">✅ دفعت (ارفع الإيصال)</button>';
+      if (i.rejected) h += '<div class="rejnote">❌ تم رفض الإيصال السابق' + (i.rejectNote ? ': ' + esc(i.rejectNote) : '') + '. يمكنك رفع إيصال جديد.</div>';
+      h += '<button class="paid-btn" data-code="' + esc(i.code) + '" data-desc="' + esc(i.desc) + '" data-rest="' + i.remaining + '">✅ ساهمت (ارفع الإيصال)</button>';
     }
     h += '</div>';
   });
   h += '</div>';
 
-  if (s.pay_info || s.treasurer_phone) {
-    h += '<div class="card"><h2>كيف أدفع</h2>';
-    if (s.treasurer_name) h += '<div class="mut" style="margin-bottom:8px">أمين الصندوق: ' + esc(s.treasurer_name) + '</div>';
+  const pm = s.pay || [];
+  if (pm.length || s.pay_info || s.treasurer_phone) {
+    h += '<div class="card"><h2>طريقة المساهمة</h2>';
+    if (s.treasurer_name) h += '<div class="mut" style="margin-bottom:10px">أمين الصندوق: ' + esc(s.treasurer_name) + '</div>';
+    pm.forEach((p, n) => {
+      h += '<div class="pm"><div class="ty">' + esc(p.type || 'وسيلة دفع') + '</div><div class="nu">' + esc(p.number) + '</div>' +
+           '<button class="copy" data-copy="' + n + '">نسخ الرقم</button></div>';
+    });
     if (s.pay_info) h += '<div class="payinfo">' + esc(s.pay_info) + '</div>';
-    if (s.pay_info) h += '<button class="copy" id="copy">نسخ بيانات الدفع</button>';
+    h += '</div>';
+  }
+
+  if (d.done && d.done.length) {
+    const drow = x => '<div class="item"><div class="top"><span class="name">' + esc(x.desc) + '</span><span class="chip ok">تم الدفع ✓</span></div>' +
+      '<div class="meta">الإسهام ' + money(x.amount) + ' · تاريخ الدفع ' + esc(x.paidOn || '-') + ' · الموعد ' + esc(x.due) + '</div><div class="pb"><i style="width:100%"></i></div></div>';
+    h += '<div class="card"><h2>المشاريع المدفوعة</h2>' + d.done.slice(0, 3).map(drow).join('');
+    if (d.done.length > 3) h += '<div id="moreDone" hidden>' + d.done.slice(3).map(drow).join('') + '</div><button class="copy" id="showDone">عرض الكل (' + d.done.length + ')</button>';
+    h += '</div>';
+  }
+
+  if (d.claims && d.claims.length) {
+    const CS = { pending: ['قيد المراجعة ⏳', 'wait'], confirmed: ['تم التأكيد ✓', 'ok'], rejected: ['مرفوض', 'rej'] };
+    const crow = c => '<div class="prow"><div><div class="pn">' + esc(c.desc) + '</div><div class="mut">' + esc(c.date) + ' · ' + money(c.amount) + '</div>' +
+      (c.note ? '<div class="mut" style="color:var(--bad);white-space:pre-line">' + esc(c.note) + '</div>' : '') +
+      '</div><span class="chip ' + CS[c.status][1] + '">' + CS[c.status][0] + '</span></div>';
+    h += '<div class="card"><h2>إيصالاتك</h2>' + d.claims.slice(0, 5).map(crow).join('');
+    if (d.claims.length > 5) h += '<div id="moreCl" hidden>' + d.claims.slice(5).map(crow).join('') + '</div><button class="copy" id="showCl">عرض الكل (' + d.claims.length + ')</button>';
     h += '</div>';
   }
 
@@ -243,7 +339,7 @@ function render(d) {
     const names = {}; d.items.forEach(i => names[String(i.code)] = i.desc);
     const pays = d.payments.slice().sort((x, y) => String(y.date).localeCompare(String(x.date)));
     const row = p => '<div class="prow"><div><div class="pn">' + esc(names[String(p.code)] || p.code) + '</div><div class="mut">' + esc(p.date) + '</div></div><b class="pa">' + money(p.amount) + ' ✓</b></div>';
-    h += '<div class="card"><h2>دفعاتك</h2>' + pays.slice(0, 5).map(row).join('');
+    h += '<div class="card"><h2>مساهماتك</h2>' + pays.slice(0, 5).map(row).join('');
     if (pays.length > 5) h += '<div id="morePays" hidden>' + pays.slice(5).map(row).join('') + '</div><button class="copy" id="showAll">عرض كل الدفعات (' + pays.length + ')</button>';
     h += '</div>';
   }
@@ -258,6 +354,10 @@ function render(d) {
   }
 
   if (d.fund !== null && d.fund !== undefined) h += '<div class="card fund"><div class="ic">🛠️</div><div><span class="mut">رصيد صندوق الصيانة</span><b>' + money(d.fund) + '</b></div></div>';
+  (d.project || []).forEach(p => {
+    const pct = p.required ? Math.min(100, Math.round(p.collected / p.required * 100)) : 0;
+    h += '<div class="card"><h2>' + esc(p.desc) + '</h2><div class="mut">تم تحصيل ' + money(p.collected) + ' من ' + money(p.required) + ' (' + pct + '%)</div><div class="pb" style="margin-top:10px"><i style="width:' + pct + '%"></i></div></div>';
+  });
   h += '<button class="out" id="out">تسجيل الخروج</button>';
 
   $('view').innerHTML = h;
@@ -266,39 +366,24 @@ function render(d) {
   window.scrollTo(0, 0);
 
   $('out').onclick = () => { clear(); history.replaceState(null, '', location.pathname); location.reload(); };
-  document.querySelectorAll('.paid-btn[data-code]').forEach(b => b.onclick = () => {
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'image/*';
-    inp.onchange = async () => {
-      const f = inp.files[0];
-      if (!f) return;
-      b.disabled = true; b.textContent = 'جاري رفع الإيصال...';
-      try {
-        const data = await compress(f);
-        const r = await fetch(API_URL, {
-          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'upload', apt: CUR.a, pin: CUR.p, did: DID, code: b.dataset.code, mime: 'image/jpeg', data })
-        });
-        const x = await r.json();
-        if (x.ok) { LAST = { code: b.dataset.code, msg: b.dataset.msg }; login(CUR.a, CUR.p); return; }
-      } catch (e) {}
-      b.disabled = false; b.textContent = 'تعذر الرفع، اضغط للمحاولة مرة أخرى';
-    };
-    inp.click();
-  });
+  document.querySelectorAll('.paid-btn[data-code]').forEach(b => b.onclick = () => askAmount(b));
   const se = $('showExp');
   if (se) se.onclick = () => { $('moreExp').hidden = false; se.hidden = true; };
+  const sd = $('showDone');
+  if (sd) sd.onclick = () => { $('moreDone').hidden = false; sd.hidden = true; };
+  const sc = $('showCl');
+  if (sc) sc.onclick = () => { $('moreCl').hidden = false; sc.hidden = true; };
   const sa = $('showAll');
   if (sa) sa.onclick = () => { $('morePays').hidden = false; sa.hidden = true; };
-  const c = $('copy');
-  if (c) c.onclick = async () => {
-    try { await navigator.clipboard.writeText(s.pay_info); }
+  document.querySelectorAll('[data-copy]').forEach(c => c.onclick = async () => {
+    const t = (s.pay || [])[Number(c.dataset.copy)].number;
+    try { await navigator.clipboard.writeText(t); }
     catch (e) {
-      const t = document.createElement('textarea'); t.value = s.pay_info; document.body.appendChild(t);
-      t.select(); document.execCommand('copy'); t.remove();
+      const x = document.createElement('textarea'); x.value = t; document.body.appendChild(x);
+      x.select(); document.execCommand('copy'); x.remove();
     }
-    c.textContent = 'تم النسخ ✓'; setTimeout(() => c.textContent = 'نسخ بيانات الدفع', 1800);
-  };
+    c.textContent = 'تم النسخ ✓'; setTimeout(() => c.textContent = 'نسخ الرقم', 1800);
+  });
 }
 
 $('go').onclick = () => login(nd($('apt').value), nd($('pin').value));
