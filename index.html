@@ -283,7 +283,7 @@ const EN = {
   'تم الدفع ✓': 'Paid ✓', 'تاريخ الدفع': 'Paid on', 'المشاريع المدفوعة': 'Paid projects', 'عرض الكل': 'Show all',
   'قيد المراجعة ⏳': 'Under review ⏳', 'تم التأكيد ✓': 'Confirmed ✓', 'مرفوض': 'Rejected', 'إيصالاتك': 'Your receipts',
   'مساهماتك': 'Your contributions', 'عرض كل الدفعات': 'Show all payments', 'مصروفات الصيانة': 'Maintenance expenses', 'عرض كل المصروفات': 'Show all expenses',
-  'رصيد صندوق الصيانة': 'Maintenance fund balance', 'صندوق المشروع': 'Project fund', 'فائض': 'Surplus', 'رصيد تحت التحصيل': 'Balance being collected',
+  'رصيد صندوق الصيانة': 'Maintenance fund balance', 'صندوق المشروع': 'Project fund', 'فائض': 'Surplus', 'رصيد المشروع الان': 'Current project balance',
   'تسجيل الخروج': 'Log out', 'القائمة': 'Menu', 'الوضع': 'Appearance', 'تلقائي': 'Auto', 'فاتح': 'Light', 'داكن': 'Dark', 'اللغة': 'Language',
   'تواصل مع المنشئ': 'Contact the creator', 'إغلاق': 'Close', '💬 واتساب': '💬 WhatsApp', '✉️ إيميل': '✉️ Email',
   'هل تريد نظاماً مثل هذا لعمارتك أو نشاطك؟ يسعدني التواصل معك.': 'Want a system like this for your building or business? I would be glad to hear from you.',
@@ -684,7 +684,7 @@ function render(d, keepScroll) {
   }
 
   if (d.payments.length) {
-    const names = {}; d.items.forEach(i => names[String(i.code)] = i.desc);
+    const names = {}; d.items.concat(d.done || []).forEach(i => names[String(i.code)] = i.desc);
     const pays = d.payments.slice().sort((x, y) => String(y.date).localeCompare(String(x.date)));
     const row = p => '<div class="prow"><div><div class="pn">' + esc(names[String(p.code)] || p.code) + '</div><div class="mut">' + esc(p.date) + '</div></div><b class="pa">' + money(p.amount) + ' ✓</b></div>';
     h += '<div class="card"><h2>' + t('مساهماتك') + '</h2>' + pays.slice(0, 5).map(row).join('');
@@ -706,7 +706,7 @@ function render(d, keepScroll) {
     h += '<div class="card fund"><div class="ic">🛠️</div><div style="flex:1"><span class="mut">' + t('رصيد صندوق الصيانة') + '</span><b>' + money(d.fund) + '</b>' +
       (fp !== null ? '<div class="mut" style="margin-top:8px">' + esc(d.fundPart.desc) + ': ' + contrib(d.fundPart.count, fp) + '</div><div class="pb" style="margin-top:6px"><i style="width:' + fp + '%"></i></div>' : '') + '</div></div>';
   }
-  if (d.pfund && d.pfund.length) h += '<div class="card"><h2>' + t('صندوق المشروع') + '</h2>' + d.pfund.map(p => '<div class="item"><div class="top"><span class="name">' + esc(p.desc) + '</span><span class="chip ' + (p.final ? 'ok' : 'wait') + '">' + (p.final ? t('فائض') : t('رصيد تحت التحصيل')) + ' ' + money(p.balance) + '</span></div></div>').join('') + '</div>';
+  if (d.pfund && d.pfund.length) h += '<div class="card"><h2>' + t('صندوق المشروع') + '</h2>' + d.pfund.map(p => '<div class="item"><div class="top"><span class="name">' + esc(p.desc) + '</span><span class="chip ' + (p.final ? 'ok' : 'wait') + '">' + (p.final ? t('فائض') : t('رصيد المشروع الان')) + ' ' + money(p.balance) + '</span></div></div>').join('') + '</div>';
   (d.project || []).forEach(p => {
     const pc = p.required ? Math.min(100, Math.round(p.collected / p.required * 100)) : 0;
     h += '<div class="card"><h2>' + esc(p.desc) + '</h2><div class="mut">' + collected(p.collected, p.required, pc) + wk(p.work) + '</div>' + (p.total ? '<div class="mut" style="margin-top:4px">' + contrib(p.count, Math.min(100, Math.round(p.count / p.total * 100))) + '</div>' : '') + '<div class="pb" style="margin-top:10px"><i style="width:' + pc + '%"></i></div></div>';
