@@ -282,7 +282,7 @@ const EN = {
   'مدفوع مقدماً': 'Paid in advance', 'وسيلة الدفع غير صحيحة، حدّث الصفحة.': 'Invalid payment method, refresh the page.', 'وسيلة الدفع': 'Payment method', 'اشتراك الصندوق': 'Fund subscription', 'مدفوع مقدماً ✓': 'Paid in advance ✓',
   'تم الدفع ✓': 'Paid ✓', 'تاريخ الدفع': 'Paid on', 'المشاريع المدفوعة': 'Paid projects', 'عرض الكل': 'Show all',
   'قيد المراجعة ⏳': 'Under review ⏳', 'تم التأكيد ✓': 'Confirmed ✓', 'مرفوض': 'Rejected', 'إيصالاتك': 'Your receipts',
-  'مساهماتك': 'Your contributions', 'عرض كل الدفعات': 'Show all payments', 'مصروفات الصيانة': 'Maintenance expenses', 'عرض كل المصروفات': 'Show all expenses',
+  'مساهماتك': 'Your contributions', 'عرض كل الدفعات': 'Show all payments', 'مصروفات الصيانة': 'Maintenance expenses', 'مصروفات المشروع': 'Project expenses', 'الإجمالي': 'Total', 'عرض كل المصروفات': 'Show all expenses',
   'رصيد صندوق الصيانة': 'Maintenance fund balance', 'صندوق المشروع': 'Project fund', 'فائض': 'Surplus', 'رصيد المشروع الان': 'Current project balance',
   'تسجيل الخروج': 'Log out', 'القائمة': 'Menu', 'الوضع': 'Appearance', 'تلقائي': 'Auto', 'فاتح': 'Light', 'داكن': 'Dark', 'اللغة': 'Language',
   'تواصل مع المنشئ': 'Contact the creator', 'إغلاق': 'Close', '💬 واتساب': '💬 WhatsApp', '✉️ إيميل': '✉️ Email',
@@ -664,7 +664,6 @@ function render(d, keepScroll) {
     h += '</div>';
   }
 
-  if (d.advance && d.advance.length) h += '<div class="card"><h2>' + t('مدفوع مقدماً') + '</h2>' + d.advance.map(a => '<div class="item"><div class="top"><span class="name">' + t('اشتراك الصندوق') + ' - ' + esc(a.label) + '</span><span class="chip ok">' + t('مدفوع مقدماً ✓') + ' ' + money(a.amount) + '</span></div></div>').join('') + '</div>';
   if (d.done && d.done.length) {
     const drow = x => '<div class="item"><div class="top"><span class="name">' + esc(x.desc) + '</span><span class="chip ok">' + t('تم الدفع ✓') + '</span></div>' +
       '<div class="meta">' + t('الإسهام') + ' ' + money(x.amount) + ' · ' + t('تاريخ الدفع') + ' ' + esc(x.paidOn || '-') + ' · ' + t('الموعد') + ' ' + esc(x.due) + wk(x.work) + '</div><div class="pb"><i style="width:100%"></i></div></div>';
@@ -683,12 +682,10 @@ function render(d, keepScroll) {
     h += '</div>';
   }
 
-  if (d.payments.length) {
-    const names = {}; d.items.concat(d.done || []).forEach(i => names[String(i.code)] = i.desc);
-    const pays = d.payments.slice().sort((x, y) => String(y.date).localeCompare(String(x.date)));
-    const row = p => '<div class="prow"><div><div class="pn">' + esc(names[String(p.code)] || p.code) + '</div><div class="mut">' + esc(p.date) + '</div></div><b class="pa">' + money(p.amount) + ' ✓</b></div>';
-    h += '<div class="card"><h2>' + t('مساهماتك') + '</h2>' + pays.slice(0, 5).map(row).join('');
-    if (pays.length > 5) h += '<div id="morePays" hidden>' + pays.slice(5).map(row).join('') + '</div><button class="copy" id="showAll">' + t('عرض كل الدفعات') + ' (' + pays.length + ')</button>';
+  if (d.contribs && d.contribs.length) {
+    const row = p => '<div class="prow"><div><div class="pn">' + esc(p.desc) + '</div><div class="mut">' + esc(p.date) + '</div></div><b class="pa">' + money(p.amount) + ' ✓</b></div>';
+    h += '<div class="card"><h2>' + t('مساهماتك') + '</h2>' + d.contribs.slice(0, 5).map(row).join('');
+    if (d.contribs.length > 5) h += '<div id="morePays" hidden>' + d.contribs.slice(5).map(row).join('') + '</div><button class="copy" id="showAll">' + t('عرض كل الدفعات') + ' (' + d.contribs.length + ')</button>';
     h += '</div>';
   }
 
@@ -696,9 +693,14 @@ function render(d, keepScroll) {
     const erow = e => '<div class="prow"><div><div class="pn">' + esc(e.desc) + '</div><div class="mut">' + esc(e.date) + '</div>' +
       (e.details ? '<div class="mut" style="white-space:pre-line;margin-top:2px">' + esc(e.details) + '</div>' : '') +
       '</div><b>' + money(e.amount) + '</b></div>';
-    h += '<div class="card"><h2>' + t('مصروفات الصيانة') + '</h2>' + d.expenses.slice(0, 5).map(erow).join('');
-    if (d.expenses.length > 5) h += '<div id="moreExp" hidden>' + d.expenses.slice(5).map(erow).join('') + '</div><button class="copy" id="showExp">' + t('عرض كل المصروفات') + ' (' + d.expenses.length + ')</button>';
-    h += '</div>';
+    const gs = [], gi = {};
+    d.expenses.forEach(e => { const k = e.proj ? 'p:' + e.proj : 'g'; if (!(k in gi)) { gi[k] = gs.length; gs.push({ title: e.proj ? e.pdesc : t('مصروفات الصيانة'), sub: e.proj ? t('مصروفات المشروع') : '', rows: [] }); } gs[gi[k]].rows.push(e); });
+    gs.forEach((g, n) => {
+      const tot = g.rows.reduce((x, e) => x + e.amount, 0);
+      h += '<div class="card"><h2>' + esc(g.title) + '</h2>' + (g.sub ? '<div class="mut">' + g.sub + ' · ' + t('الإجمالي') + ' ' + money(tot) + '</div>' : '') + g.rows.slice(0, 5).map(erow).join('');
+      if (g.rows.length > 5) h += '<div id="moreExp' + n + '" hidden>' + g.rows.slice(5).map(erow).join('') + '</div><button class="copy" data-more="moreExp' + n + '">' + t('عرض كل المصروفات') + ' (' + g.rows.length + ')</button>';
+      h += '</div>';
+    });
   }
 
   if (d.fund !== null && d.fund !== undefined) {
@@ -706,10 +708,14 @@ function render(d, keepScroll) {
     h += '<div class="card fund"><div class="ic">🛠️</div><div style="flex:1"><span class="mut">' + t('رصيد صندوق الصيانة') + '</span><b>' + money(d.fund) + '</b>' +
       (fp !== null ? '<div class="mut" style="margin-top:8px">' + esc(d.fundPart.desc) + ': ' + contrib(d.fundPart.count, fp) + '</div><div class="pb" style="margin-top:6px"><i style="width:' + fp + '%"></i></div>' : '') + '</div></div>';
   }
-  if (d.pfund && d.pfund.length) h += '<div class="card"><h2>' + t('صندوق المشروع') + '</h2>' + d.pfund.map(p => '<div class="item"><div class="top"><span class="name">' + esc(p.desc) + '</span><span class="chip ' + (p.final ? 'ok' : 'wait') + '">' + (p.final ? t('فائض') : t('رصيد المشروع الان')) + ' ' + money(p.balance) + '</span></div></div>').join('') + '</div>';
-  (d.project || []).forEach(p => {
-    const pc = p.required ? Math.min(100, Math.round(p.collected / p.required * 100)) : 0;
-    h += '<div class="card"><h2>' + esc(p.desc) + '</h2><div class="mut">' + collected(p.collected, p.required, pc) + wk(p.work) + '</div>' + (p.total ? '<div class="mut" style="margin-top:4px">' + contrib(p.count, Math.min(100, Math.round(p.count / p.total * 100))) + '</div>' : '') + '<div class="pb" style="margin-top:10px"><i style="width:' + pc + '%"></i></div></div>';
+  (d.pcards || []).forEach(p => {
+    h += '<div class="card"><h2>' + esc(p.desc) + '</h2>';
+    if (p.required !== null) {
+      const pc = p.required ? Math.min(100, Math.round(p.collected / p.required * 100)) : 0;
+      h += '<div class="mut">' + collected(p.collected, p.required, pc) + wk(p.work) + '</div>' + (p.total ? '<div class="mut" style="margin-top:4px">' + contrib(p.count, Math.min(100, Math.round(p.count / p.total * 100))) + '</div>' : '') + '<div class="pb" style="margin-top:10px"><i style="width:' + pc + '%"></i></div>';
+    } else if (p.work) h += '<div class="mut">' + t('التنفيذ') + ': ' + (p.work === 'done' ? t('تم ✓') : t('جاري')) + '</div>';
+    if (p.balance !== null) h += '<div class="top" style="margin-top:10px"><span class="mut">' + (p.final ? t('فائض') : t('رصيد المشروع الان')) + '</span><span class="chip ' + (p.final ? 'ok' : 'wait') + '">' + money(p.balance) + '</span></div>';
+    h += '</div>';
   });
 
   $('view').innerHTML = h;
@@ -722,8 +728,7 @@ function render(d, keepScroll) {
   if (!keepScroll) window.scrollTo(0, 0);
 
   document.querySelectorAll('.paid-btn[data-code]').forEach(b => b.onclick = () => askAmount(b));
-  const se = $('showExp');
-  if (se) se.onclick = () => { $('moreExp').hidden = false; se.hidden = true; };
+  document.querySelectorAll('button[data-more]').forEach(b => b.onclick = () => { $(b.dataset.more).hidden = false; b.hidden = true; });
   const sd = $('showDone');
   if (sd) sd.onclick = () => { $('moreDone').hidden = false; sd.hidden = true; };
   const sc = $('showCl');
