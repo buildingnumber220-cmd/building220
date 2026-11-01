@@ -242,7 +242,7 @@ a.vw{color:var(--ac);font-weight:800;text-decoration:underline;cursor:pointer;ma
 
 <script>
 // ضع هنا رابط الـ Web App من Apps Script
-const API_URL = "https://script.google.com/macros/s/AKfycbzVJd0ogGGgehVNkPVuZyJWbjZeX5MBpkNNziDPv-8HN4LTYCX5gZtcjEKVbggRmDIQ6g/exec";
+const API_URL = "PUT_WEB_APP_URL_HERE";
 
 // بيانات التواصل مع المنشئ (القايمة الجانبية). اتركهم فاضيين لإخفاء الزر.
 // phone بصيغة دولية بدون + (مثال 201012345678)
@@ -289,7 +289,7 @@ const EN = {
   'هل تريد نظاماً مثل هذا لعمارتك أو نشاطك؟ يسعدني التواصل معك.': 'Want a system like this for your building or business? I would be glad to hear from you.',
   'للبيع': 'For sale', 'أقدّم خدمة': 'Offering a service', 'أطلب خدمة': 'Looking for a service',
   'أضف إعلان': 'Post an ad', 'إعلاناتي': 'My ads', 'نوع الإعلان': 'Ad type', 'نص الإعلان': 'Ad text',
-  'مثال: يوجد شيكارة سفيتو زيادة بـ250 جنيه لو حد محتاجها': 'Example: I have an extra bag of cement for 250 EGP if anyone needs it',
+  'مثال: يوجد سلم ألومنيوم زيادة لو حد محتاجه': 'Example: I have an extra bag of cement for 250 EGP if anyone needs it',
   'يظهر إعلانك باسم شقتك بعد موافقة الإدارة، ويستمر 15 يوم.': 'Your ad appears under your apartment name after admin approval and stays for 15 days.',
   'إرسال للمراجعة': 'Submit for review', 'تم إرسال إعلانك للمراجعة ✓': 'Your ad was sent for review ✓',
   'منشور ✓': 'Published ✓', 'منتهي': 'Expired', 'حذف': 'Delete', 'حتى': 'until', 'لا توجد إعلانات بعد.': 'No ads yet.',
@@ -449,7 +449,7 @@ function openAdForm() {
   ov.innerHTML = '<div class="sheet tall"><h2>' + t('أضف إعلان') + '</h2>' +
     '<div class="mut">' + t('يظهر إعلانك باسم شقتك بعد موافقة الإدارة، ويستمر 15 يوم.') + '</div>' +
     '<div class="field"><label>' + t('نوع الإعلان') + '</label><div class="seg" id="atype">' + ['sell', 'service', 'request'].map(k => '<button data-k="' + k + '" class="' + (k === type ? 'on' : '') + '">' + adLabel(k) + '</button>').join('') + '</div></div>' +
-    '<div class="field"><label>' + t('نص الإعلان') + '</label><textarea class="at" id="atx" maxlength="150" placeholder="' + esc(t('مثال: يوجد شيكارة سفيتو زيادة بـ250 جنيه لو حد محتاجها')) + '"></textarea><div class="cnt"><span id="acn">0</span>/150</div></div>' +
+    '<div class="field"><label>' + t('نص الإعلان') + '</label><textarea class="at" id="atx" maxlength="150" placeholder="' + esc(t('مثال: يوجد سلم ألومنيوم زيادة لو حد محتاجه')) + '"></textarea><div class="cnt"><span id="acn">0</span>/150</div></div>' +
     '<div class="field"><button class="copy" id="apick" type="button">' + t('📷 إضافة صورة (اختياري)') + '</button><div class="prev" id="aprev" hidden><img id="aimg" alt=""><button class="del" id="arm" type="button">' + t('إزالة الصورة') + '</button></div></div>' +
     '<div id="aerr" class="err"></div>' +
     '<button class="btn" id="asend">' + t('إرسال للمراجعة') + '</button><button class="cancel" id="acx">' + t('إلغاء') + '</button></div>';
