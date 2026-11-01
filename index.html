@@ -682,10 +682,12 @@ function render(d, keepScroll) {
     h += '</div>';
   }
 
-  if (d.contribs && d.contribs.length) {
+  const cReg = (d.contribs || []).filter(x => !x.adv), cAdv = (d.contribs || []).filter(x => x.adv);
+  if (cReg.length || cAdv.length) {
     const row = p => '<div class="prow"><div><div class="pn">' + esc(p.desc) + '</div><div class="mut">' + esc(p.date) + '</div></div><b class="pa">' + money(p.amount) + ' ✓</b></div>';
-    h += '<div class="card"><h2>' + t('مساهماتك') + '</h2>' + d.contribs.slice(0, 5).map(row).join('');
-    if (d.contribs.length > 5) h += '<div id="morePays" hidden>' + d.contribs.slice(5).map(row).join('') + '</div><button class="copy" id="showAll">' + t('عرض كل الدفعات') + ' (' + d.contribs.length + ')</button>';
+    h += '<div class="card"><h2>' + t('مساهماتك') + '</h2>' + cReg.slice(0, 5).map(row).join('');
+    if (cReg.length > 5) h += '<div id="morePays" hidden>' + cReg.slice(5).map(row).join('') + '</div><button class="copy" id="showAll">' + t('عرض كل الدفعات') + ' (' + cReg.length + ')</button>';
+    h += cAdv.map(a => '<div class="item"><div class="top"><span class="name">' + esc(a.desc) + '</span><span class="chip ok">' + t('مدفوع مقدماً ✓') + ' ' + money(a.amount) + '</span></div></div>').join('');
     h += '</div>';
   }
 
@@ -703,11 +705,6 @@ function render(d, keepScroll) {
     });
   }
 
-  if (d.fund !== null && d.fund !== undefined) {
-    const fp = d.fundPart && d.fundPart.total ? Math.min(100, Math.round(d.fundPart.count / d.fundPart.total * 100)) : null;
-    h += '<div class="card fund"><div class="ic">🛠️</div><div style="flex:1"><span class="mut">' + t('رصيد صندوق الصيانة') + '</span><b>' + money(d.fund) + '</b>' +
-      (fp !== null ? '<div class="mut" style="margin-top:8px">' + esc(d.fundPart.desc) + ': ' + contrib(d.fundPart.count, fp) + '</div><div class="pb" style="margin-top:6px"><i style="width:' + fp + '%"></i></div>' : '') + '</div></div>';
-  }
   (d.pcards || []).forEach(p => {
     h += '<div class="card"><h2>' + esc(p.desc) + '</h2>';
     if (p.required !== null) {
@@ -717,6 +714,12 @@ function render(d, keepScroll) {
     if (p.balance !== null) h += '<div class="top" style="margin-top:10px"><span class="mut">' + (p.final ? t('فائض') : t('رصيد المشروع الان')) + '</span><span class="chip ' + (p.final ? 'ok' : 'wait') + '">' + money(p.balance) + '</span></div>';
     h += '</div>';
   });
+
+  if (d.fund !== null && d.fund !== undefined) {
+    const fp = d.fundPart && d.fundPart.total ? Math.min(100, Math.round(d.fundPart.count / d.fundPart.total * 100)) : null;
+    h += '<div class="card fund"><div class="ic">🛠️</div><div style="flex:1"><span class="mut">' + t('رصيد صندوق الصيانة') + '</span><b>' + money(d.fund) + '</b>' +
+      (fp !== null ? '<div class="mut" style="margin-top:8px">' + esc(d.fundPart.desc) + ': ' + contrib(d.fundPart.count, fp) + '</div><div class="pb" style="margin-top:6px"><i style="width:' + fp + '%"></i></div>' : '') + '</div></div>';
+  }
 
   $('view').innerHTML = h;
   $('login').hidden = true;
