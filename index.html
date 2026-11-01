@@ -9,17 +9,29 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Noto+Kufi+Arabic:wght@500;600;700&display=swap" rel="stylesheet">
+<script>
+// نطبّق الوضع واللغة المحفوظين قبل الرسم عشان ما يحصلش وميض
+try {
+  var _th = localStorage.getItem('bf_theme'); if (_th === 'light' || _th === 'dark') document.documentElement.setAttribute('data-theme', _th);
+  if (localStorage.getItem('bf_lang') === 'en') { document.documentElement.lang = 'en'; document.documentElement.dir = 'ltr'; }
+} catch (e) {}
+</script>
 <style>
 :root{
   --bg:#f6f4f8;--card:#ffffff;--tx:#1a1f33;--mut:#6e7388;--br:#ece8ef;
   --ac:#243f7b;--ac2:#3d63b8;--rose:#d6457a;--rose2:#ff8db0;--ok:#12a150;--okbg:#e6f6ed;--bad:#d93a3a;--badbg:#fdeaea;--warn:#b7791f;--warnbg:#fff5e0;
   --sh:0 8px 28px rgba(22,41,77,.09);
 }
-@media(prefers-color-scheme:dark){:root{
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0e1220;--card:#171d30;--tx:#eef1fa;--mut:#9aa3ba;--br:#262e47;
   --ac:#7da2ff;--ac2:#a3bcff;--rose:#ff7aa8;--rose2:#ffb3cb;--ok:#4cd08a;--okbg:#12301f;--bad:#ff7b7b;--badbg:#341a1d;--warn:#f1c05a;--warnbg:#352a12;
   --sh:0 6px 24px rgba(0,0,0,.35);
 }}
+:root[data-theme="dark"]{
+  --bg:#0e1220;--card:#171d30;--tx:#eef1fa;--mut:#9aa3ba;--br:#262e47;
+  --ac:#7da2ff;--ac2:#a3bcff;--rose:#ff7aa8;--rose2:#ffb3cb;--ok:#4cd08a;--okbg:#12301f;--bad:#ff7b7b;--badbg:#341a1d;--warn:#f1c05a;--warnbg:#352a12;
+  --sh:0 6px 24px rgba(0,0,0,.35);
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
 body{background:var(--bg);color:var(--tx);font-family:'Tajawal',Tahoma,Arial,sans-serif;
@@ -54,10 +66,11 @@ h2{font-size:17px;margin:0 0 12px;font-weight:800}
 .login{margin-top:-34px;position:relative;text-align:center}
 .login h2{margin:0 0 4px;font-size:20px}
 h2::before{content:"";display:inline-block;width:4px;height:16px;border-radius:4px;background:var(--rose);margin-inline-end:8px;vertical-align:-2px}
-.field{text-align:right;margin-top:14px}
+.field{text-align:start;margin-top:14px}
 label{display:block;font-size:14px;color:var(--mut);margin-bottom:6px}
 input{width:100%;padding:14px;font-size:18px;font-family:inherit;border:1.5px solid var(--br);border-radius:14px;background:var(--bg);color:var(--tx);outline:none;text-align:center;letter-spacing:2px}
 input:focus{border-color:var(--ac)}
+select{width:100%;padding:14px;font-size:17px;font-family:inherit;border:1.5px solid var(--br);border-radius:14px;background:var(--bg);color:var(--tx);outline:none}
 .btn{width:100%;margin-top:18px;padding:15px;font-size:17px;font-weight:700;font-family:inherit;border:0;border-radius:14px;
   background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;cursor:pointer;box-shadow:0 8px 18px rgba(36,63,123,.30)}
 .btn:disabled{opacity:.6}
@@ -82,6 +95,24 @@ input:focus{border-color:var(--ac)}
 .qt .qs{margin-top:8px;font-size:13px;color:var(--mut)}
 .note{background:var(--warnbg);color:var(--warn);border-radius:16px;padding:12px 14px;margin-bottom:14px;font-size:15px;font-weight:500;display:flex;gap:10px;align-items:flex-start;white-space:pre-line}
 
+/* ticker */
+.tick{display:flex;align-items:center;gap:10px;background:var(--warnbg);color:var(--warn);border-radius:16px;padding:12px 14px;margin-bottom:14px;font-size:15px;font-weight:500;overflow:hidden}
+.tick .ti{flex:none}
+.tv{flex:1;min-width:0;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.tt{display:inline-flex;white-space:nowrap;will-change:transform}
+.ts{display:inline-flex;align-items:center}
+.tx{padding:0 6px}
+.sep{padding:0 14px;opacity:.55;font-size:12px}
+@keyframes tkr{to{transform:translateX(50%)}}
+@keyframes tkl{to{transform:translateX(-50%)}}
+[dir=rtl] .tick:not(.still) .tt{animation:tkr var(--d,20s) linear infinite}
+[dir=ltr] .tick:not(.still) .tt{animation:tkl var(--d,20s) linear infinite}
+.tick:not(.still):hover .tt,.tick:not(.still):active .tt{animation-play-state:paused}
+.tick.still .tv{white-space:normal;-webkit-mask-image:none;mask-image:none}
+.tick.still .tt{display:block;white-space:normal}
+.tick.still .ts{display:block}
+.tick.still .tx{padding:0;line-height:1.7}
+
 /* items */
 .item{padding:14px 0;border-bottom:1px solid var(--br)}
 .item:last-child{border-bottom:0;padding-bottom:0}.item:first-of-type{padding-top:0}
@@ -104,7 +135,9 @@ input:focus{border-color:var(--ac)}
 .copy{margin-top:10px;width:100%;padding:12px;border-radius:12px;border:1.5px dashed var(--ac);background:transparent;color:var(--ac);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer}
 .pm{border:1.5px solid var(--br);border-radius:16px;padding:12px 14px;margin-bottom:10px;background:var(--bg)}
 .pm .ty{font-size:13px;color:var(--mut);font-weight:700}
-.pm .nu{font-size:22px;font-weight:800;letter-spacing:1px;direction:ltr;text-align:right;margin:4px 0 0;word-break:break-all;user-select:all}
+.pm .nu{font-size:22px;font-weight:800;letter-spacing:1px;direction:ltr;margin:4px 0 0;word-break:break-all;user-select:all}
+[dir=rtl] .pm .nu{text-align:right}
+[dir=ltr] .pm .nu{text-align:left}
 .pm .copy{margin-top:8px;padding:10px}
 .fund{display:flex;align-items:center;gap:12px}
 .fund .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--okbg);font-size:22px}
@@ -119,10 +152,59 @@ input:focus{border-color:var(--ac)}
 .sheet .cancel{display:block;width:100%;margin-top:6px;background:none;border:0;color:var(--mut);font-family:inherit;font-size:15px;padding:10px;cursor:pointer}
 .chip.rej{background:var(--badbg);color:var(--bad)}
 .rejnote{margin-top:8px;background:var(--badbg);color:var(--bad);border-radius:12px;padding:9px 12px;font-size:14px;white-space:pre-line}
+
+/* ads */
+.tb{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--warn);color:var(--warnbg);margin-inline-end:6px;vertical-align:1px}
+textarea.at{width:100%;min-height:96px;padding:12px;font-size:16px;font-family:inherit;border:1.5px solid var(--br);border-radius:14px;background:var(--bg);color:var(--tx);outline:none;resize:vertical;text-align:start;letter-spacing:0}
+textarea.at:focus{border-color:var(--ac)}
+.cnt{font-size:12px;color:var(--mut);text-align:end;margin-top:4px}
+.toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#1a1f33;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:90;max-width:88vw;text-align:center}
+.mad{padding:12px 0;border-bottom:1px solid var(--br)}
+.mad:last-child{border-bottom:0}
+.mad .tx2{margin:8px 0;line-height:1.7;font-size:15px}
+.mad .row2{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.del{background:none;border:0;color:var(--bad);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;padding:4px 0}
+.chip.gr{background:var(--br);color:var(--mut)}
+.flt{display:flex;gap:6px;overflow-x:auto;margin:12px 0 4px;padding-bottom:4px}
+.flt button{flex:none;padding:8px 12px;border-radius:99px;border:1.5px solid var(--br);background:var(--bg);color:var(--tx);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.flt button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+[data-theme=dark] .flt button.on{color:#0e1220}
+.sheet.tall{max-height:86vh;overflow-y:auto}
+
+a.vw{color:var(--ac);font-weight:800;text-decoration:underline;cursor:pointer;margin-inline-start:8px;white-space:nowrap}
+.prev{display:flex;align-items:center;gap:10px;margin-top:8px}
+.prev img{width:64px;height:64px;object-fit:cover;border-radius:12px;border:1px solid var(--br)}
+.pimg{max-width:100%;max-height:70vh;display:block;margin:12px auto 0;border-radius:14px}
+
+/* side menu */
+.mbtn{position:fixed;top:max(12px,env(safe-area-inset-top));inset-inline-start:12px;z-index:40;width:44px;height:44px;border-radius:14px;
+  border:1px solid var(--br);background:var(--card);color:var(--tx);box-shadow:var(--sh);font-size:21px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.mov{position:fixed;inset:0;background:rgba(10,14,30,.55);z-index:60}
+.drawer{position:fixed;top:0;bottom:0;inset-inline-start:0;width:min(86vw,320px);background:var(--card);z-index:61;box-shadow:var(--sh);
+  padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));overflow-y:auto;transition:transform .28s ease;display:flex;flex-direction:column;gap:6px}
+[dir=rtl] .drawer{transform:translateX(105%)}
+[dir=ltr] .drawer{transform:translateX(-105%)}
+.drawer.open{transform:none}
+.dh{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--br);margin-bottom:6px}
+.dh b{font-family:'Noto Kufi Arabic','Tajawal',sans-serif;font-size:18px}
+.dh .x{background:none;border:0;color:var(--mut);font-size:22px;cursor:pointer;padding:4px 8px;font-family:inherit}
+.ms{padding:12px 0;border-bottom:1px solid var(--br)}
+.ml{font-size:13px;color:var(--mut);font-weight:700;margin-bottom:8px}
+.seg{display:flex;gap:6px;background:var(--bg);border-radius:12px;padding:4px}
+.seg button{flex:1;padding:9px 6px;border:0;border-radius:9px;background:transparent;color:var(--tx);font-family:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.seg button.on{background:var(--card);color:var(--ac);box-shadow:0 1px 6px rgba(0,0,0,.14)}
+.mi{display:flex;align-items:center;gap:10px;width:100%;padding:12px 4px;background:none;border:0;color:var(--tx);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;text-align:start}
+.mi.danger{color:var(--bad)}
+.cbox{margin-top:6px;background:var(--bg);border-radius:14px;padding:12px}
+.cbox p{margin:0 0 10px;font-size:14px;line-height:1.8}
+.cbox .cr{display:flex;gap:8px}
+.cbox a{flex:1;text-align:center;padding:10px 6px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;text-decoration:none;font-weight:700;font-size:14px}
+.cbox a.wa{background:linear-gradient(135deg,#128c7e,#25d366)}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
+<button class="mbtn" id="mbtn" aria-label="القائمة" hidden>☰</button>
 <header class="brand">
   <div class="emb"><svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true">
         <defs>
@@ -136,34 +218,124 @@ input:focus{border-color:var(--ac)}
           <circle r="4.2" fill="#ffd9e5"/>
         </g>
       </svg></div>
-  <h1>عمارة 220</h1>
-  <div class="sub"><i></i>حي القرنفل<i></i></div>
+  <h1 data-t>عمارة 220</h1>
+  <div class="sub"><i></i><span data-t>حي القرنفل</span><i></i></div>
 </header>
 <div class="wrap">
 
   <div id="login" class="card login">
-    <h2>تسجيل الدخول</h2>
-    <div class="mut">ادخل بيانات شقتك لمتابعة مساهماتك</div>
-    <div class="field"><label>رقم الشقة</label><input id="apt" inputmode="numeric" autocomplete="off"></div>
-    <div class="field"><label>الرقم السري</label><input id="pin" type="password" inputmode="numeric" autocomplete="off"></div>
-    <button id="go" class="btn">دخول</button>
+    <h2 data-t>تسجيل الدخول</h2>
+    <div class="mut" data-t>ادخل بيانات شقتك لمتابعة مساهماتك</div>
+    <div class="field"><label data-t>رقم الشقة</label><input id="apt" inputmode="numeric" autocomplete="off"></div>
+    <div class="field"><label data-t>الرقم السري</label><input id="pin" type="password" inputmode="numeric" autocomplete="off"></div>
+    <button id="go" class="btn" data-t>دخول</button>
     <div id="err" class="err"></div>
+    <button class="out" id="ll" type="button">English</button>
   </div>
 
   <div id="view" hidden></div>
-  <footer>🌸 عمارة 220 · حي القرنفل</footer>
+  <footer data-t>🌸 عمارة 220 · حي القرنفل</footer>
 </div>
+
+<div id="mov" class="mov" hidden></div>
+<aside id="drawer" class="drawer" aria-hidden="true"></aside>
 
 <script>
 // ضع هنا رابط الـ Web App من Apps Script
 const API_URL = "https://script.google.com/macros/s/AKfycbzVJd0ogGGgehVNkPVuZyJWbjZeX5MBpkNNziDPv-8HN4LTYCX5gZtcjEKVbggRmDIQ6g/exec";
 
+// بيانات التواصل مع المنشئ (القايمة الجانبية). اتركهم فاضيين لإخفاء الزر.
+// phone بصيغة دولية بدون + (مثال 201012345678)
+const CREATOR = { name: 'حسام', phone: '', email: '' };
+
 const $ = id => document.getElementById(id);
 const nd = s => String(s).replace(/[٠-٩]/g, c => c.charCodeAt(0) - 1632).replace(/[۰-۹]/g, c => c.charCodeAt(0) - 1776).trim();
-const money = n => Number(n).toLocaleString('en-US') + ' جنيه';
+
+// ---------- اللغة والوضع ----------
+const LKEY = 'bf_lang', TKEY = 'bf_theme';
+let LANG = 'ar', THEME = 'auto';
+try { LANG = localStorage.getItem(LKEY) === 'en' ? 'en' : 'ar'; const th = localStorage.getItem(TKEY); if (th === 'light' || th === 'dark') THEME = th; } catch (e) {}
+const EN = {
+  'عمارة 220': 'Building 220', 'حي القرنفل': 'Al-Qaranful District', 'عمارة 220 - حي القرنفل': 'Building 220 - Al-Qaranful District',
+  '🌸 عمارة 220 · حي القرنفل': '🌸 Building 220 · Al-Qaranful District',
+  'تسجيل الدخول': 'Sign in', 'ادخل بيانات شقتك لمتابعة مساهماتك': 'Enter your apartment details to follow your contributions',
+  'رقم الشقة': 'Apartment number', 'الرقم السري': 'PIN', 'دخول': 'Sign in',
+  'تم قفل الشقة مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.': 'This apartment is temporarily locked after failed attempts. Try again in an hour.',
+  'انتهت الجلسة، اكتب الرقم السري من جديد.': 'Session expired. Enter your PIN again.',
+  'رقم الشقة أو الرقم السري غير صحيح.': 'Apartment number or PIN is incorrect.',
+  'تعذر الاتصال، حاول مرة أخرى.': 'Could not connect. Please try again.',
+  'المبلغ غير صحيح أو أكبر من المتبقي.': 'Invalid amount, or more than the remaining balance.',
+  'هذا البند مكتمل بالفعل.': 'This item is already complete.',
+  'الصورة غير مقبولة، جرّب صورة أخرى.': 'Image not accepted, try another one.',
+  'انتهت الجلسة، حدّث الصفحة واكتب الرقم السري من جديد.': 'Session expired. Refresh the page and enter your PIN again.',
+  'المبلغ بالجنيه': 'Amount (EGP)', '📎 اختيار صورة الإيصال ورفعها': '📎 Choose receipt photo & upload', 'إلغاء': 'Cancel',
+  'جاري رفع الإيصال...': 'Uploading receipt...', 'تعذر الرفع، حاول مرة أخرى.': 'Upload failed, please try again.',
+  'جنيه': 'EGP', 'شقة': 'Apartment', 'التنفيذ': 'Work', 'تم ✓': 'Done ✓', 'جاري': 'In progress',
+  'اكتمل إسهامك ✓': 'Your contribution is complete ✓', 'شكراً لمساهمتك في عمارتنا': 'Thank you for contributing to our building',
+  'إسهامك المتبقي': 'Your remaining contribution', 'الإسهام المقرر': 'Required contribution', 'ما أسهمت به': 'Contributed so far', 'نسبة الإنجاز': 'Progress',
+  'المطلوب حالياً': 'Currently due', 'لا يوجد إسهام مطلوب حالياً ✓': 'Nothing due right now ✓',
+  'مكتمل ✓': 'Complete ✓', 'في انتظار التأكيد ⏳': 'Awaiting confirmation ⏳', 'تأخر': 'Overdue', 'الموعد': 'Due', 'الإسهام': 'Amount',
+  '📲 أبلغ أمين الصندوق على واتساب': '📲 Notify the treasurer on WhatsApp',
+  '❌ تم رفض الإيصال السابق': '❌ The previous receipt was rejected', 'يمكنك رفع إيصال جديد.': 'You can upload a new receipt.',
+  '✅ ساهمت (ارفع الإيصال)': '✅ I contributed (upload receipt)',
+  'طريقة المساهمة': 'How to contribute', 'أمين الصندوق': 'Treasurer', 'وسيلة دفع': 'Payment method', 'نسخ الرقم': 'Copy number', 'تم النسخ ✓': 'Copied ✓',
+  'مدفوع مقدماً': 'Paid in advance', 'وسيلة الدفع غير صحيحة، حدّث الصفحة.': 'Invalid payment method, refresh the page.', 'وسيلة الدفع': 'Payment method', 'اشتراك الصندوق': 'Fund subscription', 'مدفوع مقدماً ✓': 'Paid in advance ✓',
+  'تم الدفع ✓': 'Paid ✓', 'تاريخ الدفع': 'Paid on', 'المشاريع المدفوعة': 'Paid projects', 'عرض الكل': 'Show all',
+  'قيد المراجعة ⏳': 'Under review ⏳', 'تم التأكيد ✓': 'Confirmed ✓', 'مرفوض': 'Rejected', 'إيصالاتك': 'Your receipts',
+  'مساهماتك': 'Your contributions', 'عرض كل الدفعات': 'Show all payments', 'مصروفات الصيانة': 'Maintenance expenses', 'عرض كل المصروفات': 'Show all expenses',
+  'رصيد صندوق الصيانة': 'Maintenance fund balance', 'صندوق المشروع': 'Project fund', 'فائض': 'Surplus', 'رصيد تحت التحصيل': 'Balance being collected',
+  'تسجيل الخروج': 'Log out', 'القائمة': 'Menu', 'الوضع': 'Appearance', 'تلقائي': 'Auto', 'فاتح': 'Light', 'داكن': 'Dark', 'اللغة': 'Language',
+  'تواصل مع المنشئ': 'Contact the creator', 'إغلاق': 'Close', '💬 واتساب': '💬 WhatsApp', '✉️ إيميل': '✉️ Email',
+  'هل تريد نظاماً مثل هذا لعمارتك أو نشاطك؟ يسعدني التواصل معك.': 'Want a system like this for your building or business? I would be glad to hear from you.',
+  'للبيع': 'For sale', 'أقدّم خدمة': 'Offering a service', 'أطلب خدمة': 'Looking for a service',
+  'أضف إعلان': 'Post an ad', 'إعلاناتي': 'My ads', 'نوع الإعلان': 'Ad type', 'نص الإعلان': 'Ad text',
+  'مثال: يوجد شيكارة سفيتو زيادة بـ250 جنيه لو حد محتاجها': 'Example: I have an extra bag of cement for 250 EGP if anyone needs it',
+  'يظهر إعلانك باسم شقتك بعد موافقة الإدارة، ويستمر 15 يوم.': 'Your ad appears under your apartment name after admin approval and stays for 15 days.',
+  'إرسال للمراجعة': 'Submit for review', 'تم إرسال إعلانك للمراجعة ✓': 'Your ad was sent for review ✓',
+  'منشور ✓': 'Published ✓', 'منتهي': 'Expired', 'حذف': 'Delete', 'حتى': 'until', 'لا توجد إعلانات بعد.': 'No ads yet.',
+  'متأكد من حذف الإعلان؟': 'Delete this ad?', 'سوق العمارة': 'Building market', 'الكل': 'All', 'لا توجد إعلانات منشورة حالياً.': 'No ads published right now.', 'إعلانك': 'Your ad', 'نُشر': 'Posted', 'سبب الرفض': 'Reason',
+  'اختر نوع الإعلان.': 'Choose the ad type.', 'اكتب نص الإعلان.': 'Write the ad text.', 'النص أطول من 150 حرف.': 'The text is longer than 150 characters.',
+  'وصلت للحد الأقصى: إعلانان نشطان للشقة. احذف أحدهما أو انتظر انتهاءه.': 'Limit reached: two active ads per apartment. Delete one or wait for it to expire.',
+  'الخدمة مشغولة، حاول مرة أخرى.': 'Service is busy, please try again.', 'عرض': 'View', '📷 إضافة صورة (اختياري)': '📷 Add a photo (optional)', 'إزالة الصورة': 'Remove photo', 'جاري تحميل الصورة...': 'Loading photo...', 'تعذر تحميل الصورة.': 'Could not load the photo.', 'تعذر الحذف، حاول مرة أخرى.': 'Could not delete, please try again.'
+};
+const t = s => (LANG === 'en' && EN[s]) || s;
+const money = n => Number(n).toLocaleString('en-US') + ' ' + t('جنيه');
+const wk = w => w ? ' · ' + t('التنفيذ') + ': ' + (w === 'done' ? t('تم ✓') : t('جاري')) : '';
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const vwLink = (id, img) => img ? ' <a class="vw" data-id="' + esc(id) + '">' + t('عرض') + '</a>' : '';
+const AD_LBL = { sell: 'للبيع', service: 'أقدّم خدمة', request: 'أطلب خدمة' };
+const adLabel = k => t(AD_LBL[k] || AD_LBL.sell);
+function toast(m) { const e = document.createElement('div'); e.className = 'toast'; e.textContent = m; document.body.appendChild(e); setTimeout(() => e.remove(), 2800); }
+const contrib = (c, p) => LANG === 'en' ? c + ' apartment' + (c === 1 ? '' : 's') + ' contributed (' + p + '%)' : 'ساهمت ' + c + ' شقة (' + p + '%)';
+const collected = (a, b, p) => LANG === 'en' ? 'Collected ' + money(a) + ' of ' + money(b) + ' (' + p + '%)' : 'تم تحصيل ' + money(a) + ' من ' + money(b) + ' (' + p + '%)';
+
+function applyTheme() {
+  const r = document.documentElement;
+  if (THEME === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', THEME);
+}
+function applyStatic() {
+  document.documentElement.lang = LANG; document.documentElement.dir = LANG === 'en' ? 'ltr' : 'rtl';
+  document.querySelectorAll('[data-t]').forEach(e => { if (!e.dataset.ar) e.dataset.ar = e.textContent; e.textContent = t(e.dataset.ar); });
+  document.title = t('عمارة 220 - حي القرنفل');
+  $('ll').textContent = LANG === 'en' ? 'العربية' : 'English';
+  $('mbtn').setAttribute('aria-label', t('القائمة'));
+}
+function setLang(l) {
+  LANG = l === 'en' ? 'en' : 'ar';
+  try { localStorage.setItem(LKEY, LANG); } catch (e) {}
+  applyStatic();
+  if (DATA) render(DATA, true);
+  buildMenu();
+}
+function setTheme(v) {
+  THEME = v;
+  try { if (v === 'auto') localStorage.removeItem(TKEY); else localStorage.setItem(TKEY, v); } catch (e) {}
+  applyTheme(); buildMenu();
+}
+
 const KEY = 'bf_login';
-const save = (a, p) => { try { localStorage.setItem(KEY, JSON.stringify({ a, p })); } catch (e) {} };
+// نخزّن رمز جلسة موقّع من السيرفر (ينتهي ويبطل لو اتغيّر الرقم السري) بدل الرقم السري نفسه
+const save = (a, t) => { try { localStorage.setItem(KEY, JSON.stringify({ a, t })); } catch (e) {} };
 const clear = () => { try { localStorage.removeItem(KEY); } catch (e) {} };
 let DATA = null, CUR = null, LAST = null;
 let DID = '';
@@ -172,29 +344,30 @@ try {
   if (!DID) { DID = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)).slice(0, 8); localStorage.setItem('bf_did', DID); }
 } catch (e) { DID = 'nostore'; }
 
-async function compress(file) {
+async function compress(file, max, q) {
   const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
-  const sc = Math.min(1, 1280 / Math.max(img.width, img.height));
+  const sc = Math.min(1, (max || 1280) / Math.max(img.width, img.height));
   const c = document.createElement('canvas');
   c.width = Math.round(img.width * sc); c.height = Math.round(img.height * sc);
   c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-  return c.toDataURL('image/jpeg', 0.72).split(',')[1];
+  return c.toDataURL('image/jpeg', q || 0.72).split(',')[1];
 }
 
-async function login(apt, pin, auto) {
+async function login(apt, pin, auto, tok) {
   $('err').textContent = '';
   $('go').disabled = true;
   try {
-    const r = await fetch(API_URL + '?apt=' + encodeURIComponent(apt) + '&pin=' + encodeURIComponent(pin) + '&did=' + encodeURIComponent(DID));
+    const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'check', apt: apt, pin: pin || '', tok: tok || '', did: DID }) });
     const d = await r.json();
     if (!d.ok) {
-      if (auto && d.error === 'bad') clear();
+      if (d.error === 'expired' || (auto && d.error === 'bad')) clear();
       $('err').textContent = d.error === 'locked'
-        ? 'تم قفل الشقة مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.'
-        : 'رقم الشقة أو الرقم السري غير صحيح.';
-    } else { save(apt, pin); CUR = { a: apt, p: pin }; render(d); }
+        ? t('تم قفل الشقة مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.')
+        : d.error === 'expired' ? t('انتهت الجلسة، اكتب الرقم السري من جديد.')
+        : t('رقم الشقة أو الرقم السري غير صحيح.');
+    } else { save(apt, d.tok); CUR = { a: apt, t: d.tok }; render(d); }
   } catch (e) {
-    $('err').textContent = 'تعذر الاتصال، حاول مرة أخرى.';
+    $('err').textContent = t('تعذر الاتصال، حاول مرة أخرى.');
   }
   $('go').disabled = false;
 }
@@ -213,53 +386,224 @@ function heroColors(p) {
   return 'linear-gradient(135deg,hsl(' + h + ',' + s + '%,' + l + '%),hsl(' + (h + 12) + ',' + s + '%,' + (l + 10) + '%))';
 }
 
-const ERR = { amount: 'المبلغ غير صحيح أو أكبر من المتبقي.', done: 'هذا البند مكتمل بالفعل.', file: 'الصورة غير مقبولة، جرّب صورة أخرى.' };
+const ERR = { method: 'وسيلة الدفع غير صحيحة، حدّث الصفحة.', amount: 'المبلغ غير صحيح أو أكبر من المتبقي.', done: 'هذا البند مكتمل بالفعل.', file: 'الصورة غير مقبولة، جرّب صورة أخرى.', expired: 'انتهت الجلسة، حدّث الصفحة واكتب الرقم السري من جديد.' };
 
 function askAmount(b) {
+  const METHODS = ((DATA && DATA.settings && DATA.settings.methods) || []);
   const rest = Number(b.dataset.rest), desc = b.dataset.desc, code = b.dataset.code;
   const ov = document.createElement('div');
   ov.className = 'ov';
+  const hint = LANG === 'en'
+    ? 'Remaining ' + money(rest) + '. Enter the amount you transferred (it can be a partial amount).'
+    : 'المتبقي ' + money(rest) + '. اكتب المبلغ الذي حوّلته (يمكن أن يكون جزءاً منه).';
   ov.innerHTML = '<div class="sheet"><h2>' + esc(desc) + '</h2>' +
-    '<div class="mut">المتبقي ' + money(rest) + '. اكتب المبلغ الذي حوّلته (يمكن أن يكون جزءاً منه).</div>' +
-    '<div class="field"><label>المبلغ بالجنيه</label><input id="amt" inputmode="decimal" autocomplete="off" value="' + rest + '"></div>' +
+    '<div class="mut">' + hint + '</div>' +
+    '<div class="field"><label>' + t('المبلغ بالجنيه') + '</label><input id="amt" inputmode="decimal" autocomplete="off" value="' + rest + '"></div>' +
+    (METHODS.length > 1 ? '<div class="field"><label>' + t('وسيلة الدفع') + '</label><select id="mth">' + METHODS.map(m => '<option>' + esc(m) + '</option>').join('') + '</select></div>' : '') +
     '<div id="aerr" class="err"></div>' +
-    '<button class="btn" id="pick">📎 اختيار صورة الإيصال ورفعها</button>' +
-    '<button class="cancel" id="cx">إلغاء</button></div>';
+    '<button class="btn" id="pick">' + t('📎 اختيار صورة الإيصال ورفعها') + '</button>' +
+    '<button class="cancel" id="cx">' + t('إلغاء') + '</button></div>';
   document.body.appendChild(ov);
   const close = () => ov.remove();
   $('cx').onclick = close;
   ov.onclick = e => { if (e.target === ov) close(); };
   $('pick').onclick = () => {
     const amt = Number(nd($('amt').value).replace(/[٫,]/g, '.'));
-    if (!isFinite(amt) || amt <= 0 || amt > rest) { $('aerr').textContent = 'اكتب مبلغاً أكبر من صفر ولا يزيد عن ' + money(rest) + '.'; return; }
+    if (!isFinite(amt) || amt <= 0 || amt > rest) {
+      $('aerr').textContent = LANG === 'en' ? 'Enter an amount above zero and no more than ' + money(rest) + '.' : 'اكتب مبلغاً أكبر من صفر ولا يزيد عن ' + money(rest) + '.';
+      return;
+    }
     const inp = document.createElement('input');
     inp.type = 'file'; inp.accept = 'image/*';
     inp.onchange = async () => {
       const f = inp.files[0];
       if (!f) return;
-      $('pick').disabled = true; $('pick').textContent = 'جاري رفع الإيصال...'; $('aerr').textContent = '';
-      let msg = 'تعذر الرفع، حاول مرة أخرى.';
+      $('pick').disabled = true; $('pick').textContent = t('جاري رفع الإيصال...'); $('aerr').textContent = '';
+      let msg = t('تعذر الرفع، حاول مرة أخرى.');
       try {
         const data = await compress(f);
         const r = await fetch(API_URL, {
           method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'upload', apt: CUR.a, pin: CUR.p, did: DID, code: code, amount: amt, mime: 'image/jpeg', data })
+          body: JSON.stringify({ action: 'upload', apt: CUR.a, tok: CUR.t, did: DID, code: code, amount: amt, method: $('mth') ? $('mth').value : (METHODS[0] || ''), mime: 'image/jpeg', data })
         });
         const x = await r.json();
         if (x.ok) {
+          // رسالة واتساب لأمين الصندوق تفضل بالعربي دايماً
           LAST = { code: code, msg: 'شقة ' + CUR.a + ': ساهمت بمبلغ ' + amt + ' جنيه في بند "' + desc + '". رفعت الإيصال في الموقع.' };
-          close(); login(CUR.a, CUR.p); return;
+          close(); login(CUR.a, '', false, CUR.t); return;
         }
-        if (ERR[x.error]) msg = ERR[x.error];
+        if (ERR[x.error]) msg = t(ERR[x.error]);
       } catch (e) {}
       $('aerr').textContent = msg;
-      $('pick').disabled = false; $('pick').textContent = '📎 اختيار صورة الإيصال ورفعها';
+      $('pick').disabled = false; $('pick').textContent = t('📎 اختيار صورة الإيصال ورفعها');
     };
     inp.click();
   };
 }
 
-function render(d) {
+// ---------- إعلانات السكان ----------
+const ADERR = { type: 'اختر نوع الإعلان.', text: 'اكتب نص الإعلان.', long: 'النص أطول من 150 حرف.', limit: 'وصلت للحد الأقصى: إعلانان نشطان للشقة. احذف أحدهما أو انتظر انتهاءه.', expired: 'انتهت الجلسة، حدّث الصفحة واكتب الرقم السري من جديد.', busy: 'الخدمة مشغولة، حاول مرة أخرى.', file: 'الصورة غير مقبولة، جرّب صورة أخرى.' };
+function openAdForm() {
+  let type = 'sell';
+  const ov = document.createElement('div'); ov.className = 'ov';
+  ov.innerHTML = '<div class="sheet tall"><h2>' + t('أضف إعلان') + '</h2>' +
+    '<div class="mut">' + t('يظهر إعلانك باسم شقتك بعد موافقة الإدارة، ويستمر 15 يوم.') + '</div>' +
+    '<div class="field"><label>' + t('نوع الإعلان') + '</label><div class="seg" id="atype">' + ['sell', 'service', 'request'].map(k => '<button data-k="' + k + '" class="' + (k === type ? 'on' : '') + '">' + adLabel(k) + '</button>').join('') + '</div></div>' +
+    '<div class="field"><label>' + t('نص الإعلان') + '</label><textarea class="at" id="atx" maxlength="150" placeholder="' + esc(t('مثال: يوجد شيكارة سفيتو زيادة بـ250 جنيه لو حد محتاجها')) + '"></textarea><div class="cnt"><span id="acn">0</span>/150</div></div>' +
+    '<div class="field"><button class="copy" id="apick" type="button">' + t('📷 إضافة صورة (اختياري)') + '</button><div class="prev" id="aprev" hidden><img id="aimg" alt=""><button class="del" id="arm" type="button">' + t('إزالة الصورة') + '</button></div></div>' +
+    '<div id="aerr" class="err"></div>' +
+    '<button class="btn" id="asend">' + t('إرسال للمراجعة') + '</button><button class="cancel" id="acx">' + t('إلغاء') + '</button></div>';
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  $('acx').onclick = close;
+  ov.onclick = e => { if (e.target === ov) close(); };
+  document.querySelectorAll('#atype button').forEach(b => b.onclick = () => { type = b.dataset.k; document.querySelectorAll('#atype button').forEach(x => x.classList.toggle('on', x === b)); });
+  $('atx').oninput = () => { $('acn').textContent = $('atx').value.length; };
+  let photo = '';
+  $('apick').onclick = () => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      try { photo = await compress(f, 1000, 0.7); $('aimg').src = 'data:image/jpeg;base64,' + photo; $('aprev').hidden = false; $('aerr').textContent = ''; }
+      catch (e) { photo = ''; $('aerr').textContent = t(ADERR.file); }
+    };
+    inp.click();
+  };
+  $('arm').onclick = () => { photo = ''; $('aprev').hidden = true; };
+  $('asend').onclick = async () => {
+    const text = $('atx').value.replace(/\s+/g, ' ').trim();
+    if (!text) { $('aerr').textContent = t(ADERR.text); return; }
+    $('asend').disabled = true; $('aerr').textContent = '';
+    let msg = t('تعذر الاتصال، حاول مرة أخرى.');
+    try {
+      const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action: 'ad_new', apt: CUR.a, tok: CUR.t, did: DID, type, text }, photo ? { mime: 'image/jpeg', data: photo } : {})) });
+      const x = await r.json();
+      if (x.ok) { close(); toast(t('تم إرسال إعلانك للمراجعة ✓')); login(CUR.a, '', false, CUR.t); return; }
+      if (ADERR[x.error]) msg = t(ADERR[x.error]);
+    } catch (e) {}
+    $('aerr').textContent = msg; $('asend').disabled = false;
+  };
+}
+async function viewImg(id) {
+  const ov = document.createElement('div'); ov.className = 'ov';
+  ov.innerHTML = '<div class="sheet tall"><div id="vbody" class="mut" style="text-align:center;padding:20px 0">' + t('جاري تحميل الصورة...') + '</div><button class="cancel" id="vcl">' + t('إغلاق') + '</button></div>';
+  document.body.appendChild(ov);
+  ov.style.zIndex = 70;
+  const close = () => ov.remove();
+  $('vcl').onclick = close; ov.onclick = e => { if (e.target === ov) close(); };
+  try {
+    const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'ad_img', apt: CUR.a, tok: CUR.t, did: DID, id }) });
+    const x = await r.json();
+    if (x.ok) { $('vbody').className = ''; $('vbody').style.padding = '0'; $('vbody').innerHTML = '<img class="pimg" alt="" src="data:' + x.mime + ';base64,' + x.data + '">'; return; }
+  } catch (e) {}
+  $('vbody').textContent = t('تعذر تحميل الصورة.');
+}
+document.addEventListener('click', e => { const v = e.target.closest && e.target.closest('a.vw'); if (v) { e.preventDefault(); viewImg(v.dataset.id); } });
+function openMarket() {
+  const all = (DATA && DATA.ads) || [];
+  let f = 'all';
+  const ov = document.createElement('div'); ov.className = 'ov';
+  const draw = () => {
+    const list = all.filter(a => f === 'all' || a.type === f);
+    const cnt = k => k === 'all' ? all.length : all.filter(a => a.type === k).length;
+    ov.innerHTML = '<div class="sheet tall"><h2>🏪 ' + t('سوق العمارة') + '</h2>' +
+      '<div class="flt">' + [['all', t('الكل')], ['sell', adLabel('sell')], ['service', adLabel('service')], ['request', adLabel('request')]].map(k => '<button data-f="' + k[0] + '" class="' + (k[0] === f ? 'on' : '') + '">' + k[1] + ' (' + cnt(k[0]) + ')</button>').join('') + '</div>' +
+      (list.length ? list.map(a => '<div class="mad"><div class="row2"><span class="tb">' + adLabel(a.type) + '</span>' + (String(a.apt) === String(DATA.apt) ? '<span class="chip ok">' + t('إعلانك') + '</span>' : '') + '</div>' +
+        '<div class="tx2"><b>' + t('شقة') + ' ' + esc(a.apt) + ':</b> ' + esc(a.text) + vwLink(a.id, a.img) + '</div>' + (a.date ? '<div class="mut">' + t('نُشر') + ' ' + esc(a.date) + '</div>' : '') + '</div>').join('') : '<div class="mut" style="margin:14px 0">' + t('لا توجد إعلانات منشورة حالياً.') + '</div>') +
+      '<button class="btn" id="mkadd">➕ ' + t('أضف إعلان') + '</button><button class="cancel" id="mkcl">' + t('إغلاق') + '</button></div>';
+    if (ov.dataset.d) ov.querySelector('.sheet').style.animation = 'none'; ov.dataset.d = '1'; // الحركة مرة واحدة بس، مش مع كل فلتر
+    ov.querySelectorAll('.flt button').forEach(b => b.onclick = () => { f = b.dataset.f; draw(); });
+    $('mkcl').onclick = () => ov.remove();
+    $('mkadd').onclick = () => { ov.remove(); openAdForm(); };
+  };
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  document.body.appendChild(ov); draw();
+}
+function openMyAds() {
+  const list = (DATA && DATA.myAds) || [];
+  const ST = { pending: ['قيد المراجعة ⏳', 'wait'], published: ['منشور ✓', 'ok'], rejected: ['مرفوض', 'rej'], expired: ['منتهي', 'gr'] };
+  const ov = document.createElement('div'); ov.className = 'ov';
+  ov.innerHTML = '<div class="sheet tall"><h2>' + t('إعلاناتي') + '</h2>' +
+    (list.length ? list.map(a => '<div class="mad"><div class="row2"><span class="tb">' + adLabel(a.type) + '</span><span class="chip ' + (ST[a.status] || ST.expired)[1] + '">' + t((ST[a.status] || ST.expired)[0]) + '</span></div>' +
+      '<div class="tx2">' + t('شقة') + ' ' + esc(DATA.apt) + ': ' + esc(a.text) + vwLink(a.id, a.img) + '</div>' +
+      (a.until ? '<div class="mut">' + t('حتى') + ' ' + esc(a.until) + '</div>' : '') +
+      (a.note ? '<div class="rejnote">' + t('سبب الرفض') + ': ' + esc(a.note) + '</div>' : '') +
+      '<button class="del" data-id="' + esc(a.id) + '">🗑️ ' + t('حذف') + '</button></div>').join('') : '<div class="mut" style="margin:10px 0">' + t('لا توجد إعلانات بعد.') + '</div>') +
+    '<button class="btn" id="mnew">➕ ' + t('أضف إعلان') + '</button><button class="cancel" id="mcl">' + t('إغلاق') + '</button></div>';
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  $('mcl').onclick = close;
+  ov.onclick = e => { if (e.target === ov) close(); };
+  $('mnew').onclick = () => { close(); openAdForm(); };
+  ov.querySelectorAll('.del').forEach(b => b.onclick = async () => {
+    if (!confirm(t('متأكد من حذف الإعلان؟'))) return;
+    b.disabled = true;
+    try {
+      const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'ad_del', apt: CUR.a, tok: CUR.t, did: DID, id: b.dataset.id }) });
+      const x = await r.json();
+      if (x.ok) { close(); await login(CUR.a, '', false, CUR.t); openMyAds(); return; }
+    } catch (e) {}
+    toast(t('تعذر الحذف، حاول مرة أخرى.')); b.disabled = false;
+  });
+}
+
+// ---------- القايمة الجانبية ----------
+function openMenu() { $('mov').hidden = false; $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false'); }
+function closeMenu() { $('mov').hidden = true; $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden', 'true'); }
+function doLogout() { clear(); history.replaceState(null, '', location.pathname); location.reload(); }
+function buildMenu() {
+  const hasC = CREATOR.phone || CREATOR.email;
+  const seg = (name, cur, opts) => '<div class="seg">' + opts.map(o => '<button data-' + name + '="' + o[0] + '" class="' + (cur === o[0] ? 'on' : '') + '">' + o[1] + '</button>').join('') + '</div>';
+  const waText = LANG === 'en' ? 'Hello, I saw the Building 220 system and would like to know more.' : 'السلام عليكم، شفت نظام عمارة 220 وعايز أعرف أكتر.';
+  let h = '<div class="dh"><div><b>' + t('القائمة') + '</b>' + (DATA ? '<div class="mut">' + t('شقة') + ' ' + esc(DATA.apt) + '</div>' : '') + '</div><button class="x" id="mx" aria-label="' + t('إغلاق') + '">✕</button></div>';
+  h += '<div class="ms"><div class="ml">🌓 ' + t('الوضع') + '</div>' + seg('theme', THEME, [['auto', t('تلقائي')], ['light', t('فاتح')], ['dark', t('داكن')]]) + '</div>';
+  h += '<div class="ms"><div class="ml">🌐 ' + t('اللغة') + '</div>' + seg('lang', LANG, [['ar', 'العربية'], ['en', 'English']]) + '</div>';
+  const mineN = ((DATA && DATA.myAds) || []).filter(a => a.status === 'pending' || a.status === 'published').length;
+  const liveN = ((DATA && DATA.ads) || []).length;
+  h += '<div class="ms"><button class="mi" id="mmkt">🏪 ' + t('سوق العمارة') + (liveN ? ' (' + liveN + ')' : '') + '</button><button class="mi" id="madd">➕ ' + t('أضف إعلان') + '</button><button class="mi" id="mmine">📣 ' + t('إعلاناتي') + (mineN ? ' (' + mineN + ')' : '') + '</button></div>';
+  if (hasC) {
+    h += '<div class="ms"><button class="mi" id="cbtn">💬 ' + t('تواصل مع المنشئ') + '</button><div class="cbox" id="cbox" hidden>' +
+      '<p>' + t('هل تريد نظاماً مثل هذا لعمارتك أو نشاطك؟ يسعدني التواصل معك.') + '</p><div class="cr">' +
+      (CREATOR.phone ? '<a class="wa" target="_blank" rel="noopener" href="' + waLink(CREATOR.phone, waText) + '">' + t('💬 واتساب') + '</a>' : '') +
+      (CREATOR.email ? '<a href="mailto:' + esc(CREATOR.email) + '">' + t('✉️ إيميل') + '</a>' : '') +
+      '</div></div></div>';
+  }
+  h += '<button class="mi danger" id="mout">🚪 ' + t('تسجيل الخروج') + '</button>';
+  $('drawer').innerHTML = h;
+  $('mx').onclick = closeMenu;
+  $('mout').onclick = doLogout;
+  document.querySelectorAll('#drawer button[data-theme]').forEach(b => b.onclick = () => setTheme(b.dataset.theme));
+  document.querySelectorAll('#drawer button[data-lang]').forEach(b => b.onclick = () => setLang(b.dataset.lang));
+  $('mmkt').onclick = () => { closeMenu(); openMarket(); };
+  $('madd').onclick = () => { closeMenu(); openAdForm(); };
+  $('mmine').onclick = () => { closeMenu(); openMyAds(); };
+  const cb = $('cbtn'); if (cb) cb.onclick = () => { const x = $('cbox'); x.hidden = !x.hidden; };
+}
+$('mbtn').onclick = openMenu;
+$('mov').onclick = closeMenu;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+$('ll').onclick = () => setLang(LANG === 'en' ? 'ar' : 'en');
+
+// شريط الإعلانات: إعلان واحد قصير = ثابت، غير كده يتحرك واحد ورا التاني ويقف عند اللمس
+function tickerHtml(items) {
+  if (!items.length) return '';
+  const rm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const one = a => typeof a === 'string' ? esc(a) : '<span class="tb">' + esc(a.k) + '</span>' + esc(a.t) + vwLink(a.id, a.img);
+  if (rm) return items.map(a => '<div class="note"><span>📢</span><span>' + one(a) + '</span></div>').join('');
+  const set = '<span class="ts">' + items.map(a => '<span class="tx">' + one(a).replace(/\s*\n\s*/g, ' ') + '</span><span class="sep">✦</span>').join('') + '</span>';
+  return '<div class="tick" id="tick" data-n="' + items.length + '"><span class="ti">📢</span><div class="tv"><div class="tt" id="tt">' + set + '</div></div></div>';
+}
+function startTicker() {
+  const tick = $('tick'); if (!tick || tick.dataset.on) return;
+  const tt = $('tt'), tv = tt.parentNode, one = tt.firstChild;
+  const w = one.getBoundingClientRect().width;
+  tick.dataset.on = '1';
+  if (tick.dataset.n === '1' && w - 40 <= tv.clientWidth) { tick.classList.add('still'); const sp = one.querySelector('.sep'); if (sp) sp.remove(); return; }
+  tt.appendChild(one.cloneNode(true));
+  tt.style.setProperty('--d', Math.max(14, Math.round(w / 55)) + 's');
+}
+
+function render(d, keepScroll) {
   DATA = d;
   const s = d.settings || {};
   const paidAll = d.remaining <= 0;
@@ -268,38 +612,41 @@ function render(d) {
   let h = '';
 
   h += '<div class="hero ' + (paidAll ? 'ok' : 'bad') + '" style="background:' + heroColors(pct) + '">' +
-       '<div class="apt">شقة ' + esc(d.apt) + '</div>' +
-       '<div class="big">' + (paidAll ? 'اكتمل إسهامك ✓' : money(d.remaining)) + '</div>' +
-       '<div class="sub">' + (paidAll ? 'شكراً لمساهمتك في عمارتنا' : 'إسهامك المتبقي') + '</div>' +
+       '<div class="apt">' + t('شقة') + ' ' + esc(d.apt) + '</div>' +
+       '<div class="big">' + (paidAll ? t('اكتمل إسهامك ✓') : money(d.remaining)) + '</div>' +
+       '<div class="sub">' + (paidAll ? t('شكراً لمساهمتك في عمارتنا') : t('إسهامك المتبقي')) + '</div>' +
        '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
        (paidAll ? '' : '<div class="stats">' +
-         '<div class="stat"><b>' + money(d.required) + '</b><span>الإسهام المقرر</span></div>' +
-         '<div class="stat"><b>' + money(d.paid) + '</b><span>ما أسهمت به</span></div>' +
-         '<div class="stat"><b>' + pct + '%</b><span>نسبة الإنجاز</span></div>' +
+         '<div class="stat"><b>' + money(d.required) + '</b><span>' + t('الإسهام المقرر') + '</span></div>' +
+         '<div class="stat"><b>' + money(d.paid) + '</b><span>' + t('ما أسهمت به') + '</span></div>' +
+         '<div class="stat"><b>' + pct + '%</b><span>' + t('نسبة الإنجاز') + '</span></div>' +
        '</div>') + '</div>';
 
   if (d.quote) h += '<div class="qt"><div class="q">' + (d.quote.v ? '﴿' + esc(d.quote.t) + '﴾' : esc(d.quote.t)) + '</div><div class="qs">' + esc(d.quote.s) + '</div></div>';
 
-  if (s.announcement) h += '<div class="note"><span>📢</span><span>' + esc(s.announcement) + '</span></div>';
+  const anns = (s.announcements && s.announcements.length) ? s.announcements : (s.announcement ? [s.announcement] : []);
+  h += tickerHtml(anns.concat((d.ads || []).slice(0, 10).map(a => ({ k: adLabel(a.type), t: t('شقة') + ' ' + a.apt + ': ' + a.text, id: a.id, img: a.img }))));
 
-  h += '<div class="card"><h2>المطلوب حالياً</h2>';
-  if (!d.items.length) h += '<div class="mut">لا يوجد إسهام مطلوب حالياً ✓</div>';
+  h += '<div class="card"><h2>' + t('المطلوب حالياً') + '</h2>';
+  if (!d.items.length) h += '<div class="mut">' + t('لا يوجد إسهام مطلوب حالياً ✓') + '</div>';
   d.items.forEach(i => {
     const ok = i.remaining <= 0;
     const late = !ok && i.due && i.due < today;
     const p = i.amount > 0 ? Math.min(100, Math.round(i.paid / i.amount * 100)) : 100;
     h += '<div class="item"><div class="top"><span class="name">' + esc(i.desc) + '</span>' +
          '<span class="chip ' + (ok ? 'ok' : (i.pending ? 'wait' : (late ? 'late' : 'bad'))) + '">' +
-         (ok ? 'مكتمل ✓' : (i.pending ? 'في انتظار التأكيد ⏳' : (late ? 'تأخر · ' : '') + money(i.remaining))) + '</span></div>' +
-         '<div class="meta">الموعد ' + esc(i.due) + ' · الإسهام ' + money(i.amount) + ' · ما أسهمت به ' + money(i.paid) + '</div>' +
+         (ok ? t('مكتمل ✓') : (i.pending ? t('في انتظار التأكيد ⏳') : (late ? t('تأخر') + ' · ' : '') + money(i.remaining))) + '</span></div>' +
+         '<div class="meta">' + t('الموعد') + ' ' + esc(i.due) + ' · ' + t('الإسهام') + ' ' + money(i.amount) + ' · ' + t('ما أسهمت به') + ' ' + money(i.paid) + wk(i.work) + '</div>' +
          '<div class="pb"><i style="width:' + p + '%"></i></div>';
     if (!ok && i.pending) {
-      h += '<div class="mut" style="margin-top:8px">تم رفع إيصال بمبلغ ' + money(i.pendingAmount) + '، بانتظار تأكيد أمين الصندوق.</div>';
+      h += '<div class="mut" style="margin-top:8px">' + (LANG === 'en'
+        ? 'A receipt of ' + money(i.pendingAmount) + ' was uploaded, awaiting the treasurer\'s confirmation.'
+        : 'تم رفع إيصال بمبلغ ' + money(i.pendingAmount) + '، بانتظار تأكيد أمين الصندوق.') + '</div>';
       if (LAST && LAST.code === String(i.code) && s.treasurer_phone)
-        h += '<a class="paid-btn" target="_blank" rel="noopener" href="' + waLink(s.treasurer_phone, LAST.msg) + '">📲 أبلغ أمين الصندوق على واتساب</a>';
+        h += '<a class="paid-btn" target="_blank" rel="noopener" href="' + waLink(s.treasurer_phone, LAST.msg) + '">' + t('📲 أبلغ أمين الصندوق على واتساب') + '</a>';
     } else if (!ok && s.treasurer_phone) {
-      if (i.rejected) h += '<div class="rejnote">❌ تم رفض الإيصال السابق' + (i.rejectNote ? ': ' + esc(i.rejectNote) : '') + '. يمكنك رفع إيصال جديد.</div>';
-      h += '<button class="paid-btn" data-code="' + esc(i.code) + '" data-desc="' + esc(i.desc) + '" data-rest="' + i.remaining + '">✅ ساهمت (ارفع الإيصال)</button>';
+      if (i.rejected) h += '<div class="rejnote">' + t('❌ تم رفض الإيصال السابق') + (i.rejectNote ? ': ' + esc(i.rejectNote) : '') + '. ' + t('يمكنك رفع إيصال جديد.') + '</div>';
+      h += '<button class="paid-btn" data-code="' + esc(i.code) + '" data-desc="' + esc(i.desc) + '" data-rest="' + i.remaining + '">' + t('✅ ساهمت (ارفع الإيصال)') + '</button>';
     }
     h += '</div>';
   });
@@ -307,31 +654,32 @@ function render(d) {
 
   const pm = s.pay || [];
   if (pm.length || s.pay_info || s.treasurer_phone) {
-    h += '<div class="card"><h2>طريقة المساهمة</h2>';
-    if (s.treasurer_name) h += '<div class="mut" style="margin-bottom:10px">أمين الصندوق: ' + esc(s.treasurer_name) + '</div>';
+    h += '<div class="card"><h2>' + t('طريقة المساهمة') + '</h2>';
+    if (s.treasurer_name) h += '<div class="mut" style="margin-bottom:10px">' + t('أمين الصندوق') + ': ' + esc(s.treasurer_name) + '</div>';
     pm.forEach((p, n) => {
-      h += '<div class="pm"><div class="ty">' + esc(p.type || 'وسيلة دفع') + '</div><div class="nu">' + esc(p.number) + '</div>' +
-           '<button class="copy" data-copy="' + n + '">نسخ الرقم</button></div>';
+      h += '<div class="pm"><div class="ty">' + esc(p.type || t('وسيلة دفع')) + '</div><div class="nu">' + esc(p.number) + '</div>' +
+           '<button class="copy" data-copy="' + n + '">' + t('نسخ الرقم') + '</button></div>';
     });
     if (s.pay_info) h += '<div class="payinfo">' + esc(s.pay_info) + '</div>';
     h += '</div>';
   }
 
+  if (d.advance && d.advance.length) h += '<div class="card"><h2>' + t('مدفوع مقدماً') + '</h2>' + d.advance.map(a => '<div class="item"><div class="top"><span class="name">' + t('اشتراك الصندوق') + ' - ' + esc(a.label) + '</span><span class="chip ok">' + t('مدفوع مقدماً ✓') + ' ' + money(a.amount) + '</span></div></div>').join('') + '</div>';
   if (d.done && d.done.length) {
-    const drow = x => '<div class="item"><div class="top"><span class="name">' + esc(x.desc) + '</span><span class="chip ok">تم الدفع ✓</span></div>' +
-      '<div class="meta">الإسهام ' + money(x.amount) + ' · تاريخ الدفع ' + esc(x.paidOn || '-') + ' · الموعد ' + esc(x.due) + '</div><div class="pb"><i style="width:100%"></i></div></div>';
-    h += '<div class="card"><h2>المشاريع المدفوعة</h2>' + d.done.slice(0, 3).map(drow).join('');
-    if (d.done.length > 3) h += '<div id="moreDone" hidden>' + d.done.slice(3).map(drow).join('') + '</div><button class="copy" id="showDone">عرض الكل (' + d.done.length + ')</button>';
+    const drow = x => '<div class="item"><div class="top"><span class="name">' + esc(x.desc) + '</span><span class="chip ok">' + t('تم الدفع ✓') + '</span></div>' +
+      '<div class="meta">' + t('الإسهام') + ' ' + money(x.amount) + ' · ' + t('تاريخ الدفع') + ' ' + esc(x.paidOn || '-') + ' · ' + t('الموعد') + ' ' + esc(x.due) + wk(x.work) + '</div><div class="pb"><i style="width:100%"></i></div></div>';
+    h += '<div class="card"><h2>' + t('المشاريع المدفوعة') + '</h2>' + d.done.slice(0, 3).map(drow).join('');
+    if (d.done.length > 3) h += '<div id="moreDone" hidden>' + d.done.slice(3).map(drow).join('') + '</div><button class="copy" id="showDone">' + t('عرض الكل') + ' (' + d.done.length + ')</button>';
     h += '</div>';
   }
 
   if (d.claims && d.claims.length) {
-    const CS = { pending: ['قيد المراجعة ⏳', 'wait'], confirmed: ['تم التأكيد ✓', 'ok'], rejected: ['مرفوض', 'rej'] };
+    const CS = { pending: [t('قيد المراجعة ⏳'), 'wait'], confirmed: [t('تم التأكيد ✓'), 'ok'], rejected: [t('مرفوض'), 'rej'] };
     const crow = c => '<div class="prow"><div><div class="pn">' + esc(c.desc) + '</div><div class="mut">' + esc(c.date) + ' · ' + money(c.amount) + '</div>' +
-      (c.note ? '<div class="mut" style="color:var(--bad);white-space:pre-line">' + esc(c.note) + '</div>' : '') +
+      (c.method ? '<div class="mut">' + esc(c.method) + '</div>' : '') + (c.note ? '<div class="mut" style="color:var(--bad);white-space:pre-line">' + esc(c.note) + '</div>' : '') +
       '</div><span class="chip ' + CS[c.status][1] + '">' + CS[c.status][0] + '</span></div>';
-    h += '<div class="card"><h2>إيصالاتك</h2>' + d.claims.slice(0, 5).map(crow).join('');
-    if (d.claims.length > 5) h += '<div id="moreCl" hidden>' + d.claims.slice(5).map(crow).join('') + '</div><button class="copy" id="showCl">عرض الكل (' + d.claims.length + ')</button>';
+    h += '<div class="card"><h2>' + t('إيصالاتك') + '</h2>' + d.claims.slice(0, 5).map(crow).join('');
+    if (d.claims.length > 5) h += '<div id="moreCl" hidden>' + d.claims.slice(5).map(crow).join('') + '</div><button class="copy" id="showCl">' + t('عرض الكل') + ' (' + d.claims.length + ')</button>';
     h += '</div>';
   }
 
@@ -339,8 +687,8 @@ function render(d) {
     const names = {}; d.items.forEach(i => names[String(i.code)] = i.desc);
     const pays = d.payments.slice().sort((x, y) => String(y.date).localeCompare(String(x.date)));
     const row = p => '<div class="prow"><div><div class="pn">' + esc(names[String(p.code)] || p.code) + '</div><div class="mut">' + esc(p.date) + '</div></div><b class="pa">' + money(p.amount) + ' ✓</b></div>';
-    h += '<div class="card"><h2>مساهماتك</h2>' + pays.slice(0, 5).map(row).join('');
-    if (pays.length > 5) h += '<div id="morePays" hidden>' + pays.slice(5).map(row).join('') + '</div><button class="copy" id="showAll">عرض كل الدفعات (' + pays.length + ')</button>';
+    h += '<div class="card"><h2>' + t('مساهماتك') + '</h2>' + pays.slice(0, 5).map(row).join('');
+    if (pays.length > 5) h += '<div id="morePays" hidden>' + pays.slice(5).map(row).join('') + '</div><button class="copy" id="showAll">' + t('عرض كل الدفعات') + ' (' + pays.length + ')</button>';
     h += '</div>';
   }
 
@@ -348,24 +696,31 @@ function render(d) {
     const erow = e => '<div class="prow"><div><div class="pn">' + esc(e.desc) + '</div><div class="mut">' + esc(e.date) + '</div>' +
       (e.details ? '<div class="mut" style="white-space:pre-line;margin-top:2px">' + esc(e.details) + '</div>' : '') +
       '</div><b>' + money(e.amount) + '</b></div>';
-    h += '<div class="card"><h2>مصروفات الصيانة</h2>' + d.expenses.slice(0, 5).map(erow).join('');
-    if (d.expenses.length > 5) h += '<div id="moreExp" hidden>' + d.expenses.slice(5).map(erow).join('') + '</div><button class="copy" id="showExp">عرض كل المصروفات (' + d.expenses.length + ')</button>';
+    h += '<div class="card"><h2>' + t('مصروفات الصيانة') + '</h2>' + d.expenses.slice(0, 5).map(erow).join('');
+    if (d.expenses.length > 5) h += '<div id="moreExp" hidden>' + d.expenses.slice(5).map(erow).join('') + '</div><button class="copy" id="showExp">' + t('عرض كل المصروفات') + ' (' + d.expenses.length + ')</button>';
     h += '</div>';
   }
 
-  if (d.fund !== null && d.fund !== undefined) h += '<div class="card fund"><div class="ic">🛠️</div><div><span class="mut">رصيد صندوق الصيانة</span><b>' + money(d.fund) + '</b></div></div>';
+  if (d.fund !== null && d.fund !== undefined) {
+    const fp = d.fundPart && d.fundPart.total ? Math.min(100, Math.round(d.fundPart.count / d.fundPart.total * 100)) : null;
+    h += '<div class="card fund"><div class="ic">🛠️</div><div style="flex:1"><span class="mut">' + t('رصيد صندوق الصيانة') + '</span><b>' + money(d.fund) + '</b>' +
+      (fp !== null ? '<div class="mut" style="margin-top:8px">' + esc(d.fundPart.desc) + ': ' + contrib(d.fundPart.count, fp) + '</div><div class="pb" style="margin-top:6px"><i style="width:' + fp + '%"></i></div>' : '') + '</div></div>';
+  }
+  if (d.pfund && d.pfund.length) h += '<div class="card"><h2>' + t('صندوق المشروع') + '</h2>' + d.pfund.map(p => '<div class="item"><div class="top"><span class="name">' + esc(p.desc) + '</span><span class="chip ' + (p.final ? 'ok' : 'wait') + '">' + (p.final ? t('فائض') : t('رصيد تحت التحصيل')) + ' ' + money(p.balance) + '</span></div></div>').join('') + '</div>';
   (d.project || []).forEach(p => {
-    const pct = p.required ? Math.min(100, Math.round(p.collected / p.required * 100)) : 0;
-    h += '<div class="card"><h2>' + esc(p.desc) + '</h2><div class="mut">تم تحصيل ' + money(p.collected) + ' من ' + money(p.required) + ' (' + pct + '%)</div><div class="pb" style="margin-top:10px"><i style="width:' + pct + '%"></i></div></div>';
+    const pc = p.required ? Math.min(100, Math.round(p.collected / p.required * 100)) : 0;
+    h += '<div class="card"><h2>' + esc(p.desc) + '</h2><div class="mut">' + collected(p.collected, p.required, pc) + wk(p.work) + '</div>' + (p.total ? '<div class="mut" style="margin-top:4px">' + contrib(p.count, Math.min(100, Math.round(p.count / p.total * 100))) + '</div>' : '') + '<div class="pb" style="margin-top:10px"><i style="width:' + pc + '%"></i></div></div>';
   });
-  h += '<button class="out" id="out">تسجيل الخروج</button>';
 
   $('view').innerHTML = h;
   $('login').hidden = true;
   $('view').hidden = false;
-  window.scrollTo(0, 0);
+  $('mbtn').hidden = false;
+  buildMenu();
+  startTicker();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const k = $('tick'); if (k && !k.classList.contains('still') && k.dataset.n === '1') { /* خط جديد اتحمّل: نعيد القياس */ k.removeAttribute('data-on'); const tt = $('tt'); while (tt.children.length > 1) tt.lastChild.remove(); tt.style.removeProperty('--d'); startTicker(); } });
+  if (!keepScroll) window.scrollTo(0, 0);
 
-  $('out').onclick = () => { clear(); history.replaceState(null, '', location.pathname); location.reload(); };
   document.querySelectorAll('.paid-btn[data-code]').forEach(b => b.onclick = () => askAmount(b));
   const se = $('showExp');
   if (se) se.onclick = () => { $('moreExp').hidden = false; se.hidden = true; };
@@ -376,26 +731,31 @@ function render(d) {
   const sa = $('showAll');
   if (sa) sa.onclick = () => { $('morePays').hidden = false; sa.hidden = true; };
   document.querySelectorAll('[data-copy]').forEach(c => c.onclick = async () => {
-    const t = (s.pay || [])[Number(c.dataset.copy)].number;
-    try { await navigator.clipboard.writeText(t); }
+    const tx = (s.pay || [])[Number(c.dataset.copy)].number;
+    try { await navigator.clipboard.writeText(tx); }
     catch (e) {
-      const x = document.createElement('textarea'); x.value = t; document.body.appendChild(x);
+      const x = document.createElement('textarea'); x.value = tx; document.body.appendChild(x);
       x.select(); document.execCommand('copy'); x.remove();
     }
-    c.textContent = 'تم النسخ ✓'; setTimeout(() => c.textContent = 'نسخ الرقم', 1800);
+    c.textContent = t('تم النسخ ✓'); setTimeout(() => c.textContent = t('نسخ الرقم'), 1800);
   });
 }
 
+applyTheme();
+applyStatic();
 $('go').onclick = () => login(nd($('apt').value), nd($('pin').value));
 $('pin').addEventListener('keydown', e => { if (e.key === 'Enter') $('go').click(); });
 
 const q = new URLSearchParams(location.search);
 if (q.get('apt') && q.get('pin')) {
-  login(q.get('apt'), q.get('pin'));
+  const qa = q.get('apt'), qp = q.get('pin');
+  try { history.replaceState(null, '', location.pathname); } catch (e) {} // لا يبقى الرقم السري في شريط العنوان/السجل
+  login(qa, qp);
 } else {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (s && s.a && s.p) login(s.a, s.p, true);
+    if (s && s.a && s.t) login(s.a, '', true, s.t);
+    else if (s && s.a && s.p) login(s.a, s.p, true); // تخزين قديم: يدخل مرة ثم يُستبدل برمز جلسة بلا الرقم السري
   } catch (e) {}
 }
 </script>

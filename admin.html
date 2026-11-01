@@ -121,6 +121,8 @@ input:focus{border-color:var(--ac)}
 /* admin */
 textarea{width:100%;padding:12px;font-size:16px;font-family:inherit;border:1.5px solid var(--br);border-radius:14px;background:var(--bg);color:var(--tx);outline:none;resize:vertical;min-height:80px;text-align:right}
 textarea:focus{border-color:var(--ac)}
+select{width:100%;padding:13px;font-size:16px;font-family:inherit;border:1.5px solid var(--br);border-radius:14px;background:var(--bg);color:var(--tx);outline:none}
+.sdel{padding:7px 12px;border:0;border-radius:10px;background:var(--badbg);color:var(--bad);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer}
 input.t{text-align:right;letter-spacing:0;font-size:16px}
 .hi{display:flex;justify-content:space-between;align-items:center;margin:16px 0 12px;padding:0 4px}
 .hi b{font-size:17px}
@@ -145,6 +147,7 @@ input.t{text-align:right;letter-spacing:0;font-size:16px}
 .wa{flex:none;padding:8px 12px;border-radius:12px;border:0;background:#e6f6ed;color:#0b7a3c;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer}
 .wa:disabled{background:var(--br);color:var(--mut)}
 .wide{display:block;width:100%;margin-top:12px;padding:13px;border-radius:14px;border:0;background:#e6f6ed;color:#0b7a3c;font-family:inherit;font-weight:800;font-size:16px;cursor:pointer}
+.wk{margin-inline-start:8px;padding:5px 12px;border-radius:99px;border:1.5px solid var(--ac);background:transparent;color:var(--ac);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer}
 .addp{display:block;width:100%;margin-bottom:14px;padding:15px;border-radius:16px;border:1.5px dashed var(--ac);background:transparent;color:var(--ac);font-family:inherit;font-weight:800;font-size:16px;cursor:pointer}
 .ok-toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#1f2a44;color:#fff;padding:12px 20px;border-radius:99px;font-weight:700;z-index:60;box-shadow:var(--sh);max-width:90vw;text-align:center}
 .sheet{max-height:92vh;overflow:auto}
@@ -188,21 +191,25 @@ const $ = id => document.getElementById(id);
 const nd = s => String(s).replace(/[٠-٩]/g, c => c.charCodeAt(0) - 1632).replace(/[۰-۹]/g, c => c.charCodeAt(0) - 1776).trim();
 const money = n => Number(n).toLocaleString('en-US') + ' جنيه';
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const KEY = 'bf_admin';
-let CODE = '', DID = '', D = null, BUSY = false;
+// نخزّن رمز جلسة موقّع (ينتهي بعد مدة ويبطل لو اتغيّر رمز الإدارة) بدل الرمز نفسه
+const KEY = 'bf_admin_t', OLDKEY = 'bf_admin';
+let CODE = '', TOK = '', DID = '', D = null, BUSY = false, NSEL = '';
 try {
   DID = localStorage.getItem('bf_did') || '';
   if (!DID) { DID = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)).slice(0, 8); localStorage.setItem('bf_did', DID); }
 } catch (e) { DID = 'nostore'; }
 
 const ERR = {
-  bad: 'الرمز غير صحيح.', locked: 'تم قفل الدخول مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.',
-  off: 'صفحة الإدارة غير مفعّلة: اكتب رمز الإدارة (8 خانات على الأقل) في Settings.',
-  key: 'إعداد غير مسموح.', desc: 'اكتب وصف المشروع.', amount: 'اكتب مبلغاً صحيحاً أكبر من صفر.', date: 'تاريخ الاستحقاق غير صحيح.'
+  bad: 'الرمز غير صحيح.', expired: 'انتهت الجلسة، اكتب الرمز من جديد.', nomail: 'مفيش متأخرين ليهم إيميل مسجّل.', locked: 'تم قفل الدخول مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.',
+  off: 'صفحة الإدارة غير مفعّلة: اكتب رمز الإدارة (8 خانات على الأقل) في الإعدادات.',
+  act: 'الإجراء غير صحيح.', when: 'اكتب موعداً صحيحاً في المستقبل (خلال سنة).', target: 'الهدف غير صحيح (لشقق محددة اكتب الأرقام).', text: 'اكتب نص الإيميل.', limit: 'وصلت للحد الأقصى من الرسائل المجدولة المعلّقة.',
+  recent: 'الشقة اتنبّهت من أقل من 3 أيام.',
+  none: 'الإعلان غير موجود.', state: 'حالة الإعلان اتغيّرت، حدّث الصفحة.', busy: 'الخدمة مشغولة، حاول تاني.',
+  key: 'إعداد غير مسموح.', desc: 'اكتب وصف المشروع.', amount: 'اكتب مبلغاً صحيحاً أكبر من صفر.', date: 'تاريخ الاستحقاق غير صحيح.', amount_m: 'اكتب «المبلغ الشهري لصندوق الصيانة» في الإعدادات أولاً.', item: 'المشروع غير موجود، حدّث الصفحة.', work: 'الحالة غير صحيحة.'
 };
 
 async function api(body) {
-  const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ code: CODE, did: DID }, body)) });
+  const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ code: CODE, tok: CODE ? '' : TOK, did: DID }, body)) });
   return r.json();
 }
 function toast(t) {
@@ -221,16 +228,17 @@ async function load(code, auto, silent) {
   try {
     const d = await api({ action: 'a_list' });
     if (!d.ok) {
-      if (auto && d.error === 'bad') { try { localStorage.removeItem(KEY); } catch (e) {} }
-      if (!silent) { $('err').textContent = ERR[d.error] || 'تعذر الدخول.'; $('login').hidden = false; $('view').hidden = true; }
+      if (d.error === 'expired' || (auto && d.error === 'bad')) { try { localStorage.removeItem(KEY); } catch (e) {} TOK = ''; }
+      if (!silent || d.error === 'expired') { $('err').textContent = ERR[d.error] || 'تعذر الدخول.'; $('login').hidden = false; $('view').hidden = true; }
     } else {
-      try { localStorage.setItem(KEY, code); } catch (e) {}
+      if (d.tok) { TOK = d.tok; try { localStorage.setItem(KEY, TOK); } catch (e) {} }
+      CODE = '';
       D = d; render();
     }
   } catch (e) { if (!silent) $('err').textContent = 'تعذر الاتصال، حاول مرة أخرى.'; }
   if (!silent) $('go').disabled = false;
 }
-const reload = () => load(CODE, false, true);
+const reload = () => load('', false, true);
 
 function toggleRow(key, title, sub, on) {
   return '<div class="tg"><div><div class="tt">' + title + '</div><div class="ts">' + sub + '</div></div><button class="sw' + (on ? ' on' : '') + '" data-k="' + key + '"></button></div>';
@@ -251,6 +259,8 @@ function render() {
     const pct = p.required ? Math.min(100, Math.round(p.collected / p.required * 100)) : 0;
     h += '<div class="item"><div class="top"><div class="name">' + esc(p.desc) + '</div><span class="chip ' + (p.open ? 'wait' : 'ok') + '">' + (p.open ? 'مفتوح' : 'مكتمل') + '</span></div>' +
       '<div class="meta">' + money(p.per) + ' لكل شقة · الاستحقاق ' + esc(p.due || '-') + '</div>' +
+      '<div class="meta">التنفيذ: <b>' + (p.work === 'done' ? 'تم ✓' : 'جاري') + '</b><button class="wk" data-c="' + esc(p.code) + '" data-w="' + (p.work === 'done' ? 'doing' : 'done') + '">' + (p.work === 'done' ? 'إعادته لجاري' : 'تم التنفيذ ✓') + '</button></div>' +
+      '<div class="meta">رصيد المشروع: <b>' + money(p.balance) + '</b> ' + (p.final ? '<span class="chip ok">فائض</span>' : '<span class="chip wait">تحت التحصيل' + (p.remaining > 0 ? ' · لسه ' + money(p.remaining) + ' متوقع' : '') + '</span>') + '</div>' +
       '<div class="pb"><i style="width:' + pct + '%"></i></div>' +
       '<div class="pg"><span>محصّل ' + money(p.collected) + '</span><span>من ' + money(p.required) + ' (' + pct + '%)</span></div></div>';
   });
@@ -259,10 +269,32 @@ function render() {
   h += '<div class="card"><h2>إيصالات تنتظر المراجعة' + (d.claims.length ? ' (' + d.claims.length + ')' : '') + '</h2>';
   if (!d.claims.length) h += '<div class="mut">لا توجد إيصالات معلّقة ✓</div>';
   d.claims.forEach((c, i) => {
-    h += '<div class="cl"><div class="top"><div class="name">شقة ' + esc(c.apt) + (c.name ? ' · ' + esc(c.name) : '') + '</div><b>' + money(c.amount) + '</b></div>' +
+    h += '<div class="cl"><div class="top"><div class="name">شقة ' + esc(c.apt) + (c.name ? ' · ' + esc(c.name) : '') + (c.method ? ' <span class="chip wait">' + esc(c.method) + '</span>' : '') + '</div><b>' + money(c.amount) + '</b></div>' +
       '<div class="meta">' + esc(c.desc) + ' · ' + esc(c.date) + '</div><div>' +
       c.files.map((u, n) => '<a href="' + esc(u) + '" target="_blank" rel="noopener">🖼️ إيصال ' + (c.files.length > 1 ? (n + 1) : '') + '</a>').join('') +
       '</div><div class="acts"><button class="yes" data-c="' + i + '">✅ تأكيد</button><button class="no" data-r="' + i + '">❌ رفض</button></div></div>';
+  });
+  h += '</div>';
+
+  const bm = d.byMethod || { fund: [], project: [] };
+  const mrows = (t, a) => a.length ? '<div class="mut" style="margin:8px 0 2px"><b>' + t + '</b></div>' + a.map(x => '<div class="prow"><div class="pn">' + esc(x[0]) + '</div><div class="pa">' + money(x[1]) + '</div></div>').join('') : '';
+  h += '<div class="card"><h2>التحصيل حسب وسيلة الدفع</h2>' + (bm.fund.length || bm.project.length ? mrows('صندوق الصيانة', bm.fund) + mrows('المشاريع', bm.project) : '<div class="mut">لا توجد دفعات بعد.</div>') + '</div>';
+  h += '<div class="card"><h2>آخر الدفعات</h2>' + ((d.recent || []).length ? d.recent.map(r => '<div class="prow"><div><div class="pn">شقة ' + esc(r.apt) + ' · ' + esc(r.desc) + '</div><div class="mut">' + esc(r.date) + (r.method ? ' · ' + esc(r.method) : '') + '</div></div><div class="pa">' + money(r.amount) + '</div></div>').join('') : '<div class="mut">لا توجد دفعات بعد.</div>') + '</div>';
+
+  const ads = d.ads || { pending: [], live: [] };
+  const ATL = { sell: 'للبيع', service: 'أقدّم خدمة', request: 'أطلب خدمة' };
+  h += '<div class="card"><h2>إعلانات السكان' + (ads.pending.length ? ' (' + ads.pending.length + ' بانتظارك)' : '') + '</h2>';
+  if (!ads.pending.length && !ads.live.length) h += '<div class="mut">مفيش إعلانات من السكان.</div>';
+  ads.pending.forEach(x => {
+    h += '<div class="cl"><div class="top"><div class="name">شقة ' + esc(x.apt) + '</div><span class="chip wait">' + esc(ATL[x.type] || '') + '</span></div>' +
+      '<div style="margin:6px 0;line-height:1.7">' + esc(x.text) + '</div><div class="meta">' + esc(x.date) + '</div>' + (x.imgUrl ? '<div><a href="' + esc(x.imgUrl) + '" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;font-size:14px;text-decoration:none">🖼️ عرض الصورة</a></div>' : '') +
+      '<div class="acts"><button class="yes" data-adp="' + esc(x.id) + '">✅ نشر (15 يوم)</button><button class="no" data-adr="' + esc(x.id) + '">❌ رفض</button></div></div>';
+  });
+  if (ads.live.length) h += '<div class="mut" style="margin:12px 0 4px">منشور حالياً</div>';
+  ads.live.forEach(x => {
+    h += '<div class="cl"><div class="top"><div class="name">شقة ' + esc(x.apt) + '</div><span class="chip ok">' + esc(ATL[x.type] || '') + '</span></div>' +
+      '<div style="margin:6px 0;line-height:1.7">' + esc(x.text) + '</div><div class="meta">ينتهي ' + esc(x.until) + '</div>' + (x.imgUrl ? '<div><a href="' + esc(x.imgUrl) + '" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;font-size:14px;text-decoration:none">🖼️ عرض الصورة</a></div>' : '') +
+      '<div class="acts"><button class="no" data-adx="' + esc(x.id) + '">🗑️ إزالة</button></div></div>';
   });
   h += '</div>';
 
@@ -273,22 +305,69 @@ function render() {
       '<button class="wa" data-w="' + i + '"' + (x.phone ? '' : ' disabled') + '>' + (x.phone ? '📲 تنبيه' : 'بلا موبايل') + '</button></div>';
   });
   if (d.late.some(x => x.phone)) h += '<button class="wide" id="all">📲 تنبيه كل الشقق</button>';
+  if (d.late.some(x => x.mail)) h += '<button class="wide" id="mailall">✉️ إيميل للمتأخرين (' + d.late.filter(x => x.mail).length + ')</button>';
   h += '</div>';
+
+  const nt = d.notify || [];
+  if (nt.length) {
+    const cur = nt.find(i => i.code === NSEL) || nt[0]; NSEL = cur.code;
+    const readyN = cur.list.filter(x => x.ready && x.phone).length;
+    h += '<div class="card"><h2>تنبيه بند جديد</h2><select id="nsel">' + nt.map(i => '<option value="' + esc(i.code) + '"' + (i.code === NSEL ? ' selected' : '') + '>' + esc(i.desc) + ' · ' + money(i.amount) + '</option>').join('') + '</select>';
+    if (!cur.list.length) h += '<div class="mut" style="margin-top:10px">كل الشقق أكملت هذا البند ✓</div>';
+    cur.list.forEach((x, k) => {
+      const stt = !x.last ? 'لم يُنبَّه' : (x.ready ? 'تم التنبيه ' + x.last + ' · جاهز من جديد' : 'تم التنبيه ✓ ' + x.last + ' · حاول بعد ' + x.left + ' يوم');
+      h += '<div class="lr"><div><div class="nm">شقة ' + esc(x.apt) + (x.name ? ' · ' + esc(x.name) : '') + '</div><div class="mut">' + stt + ' · المتبقي ' + money(x.remaining) + '</div></div>' +
+        '<button class="wa" data-n="' + k + '"' + (x.phone && x.ready ? '' : ' disabled') + '>' + (!x.phone ? 'بلا موبايل' : (x.ready ? '📲 تنبيه' : 'تم ✓')) + '</button></div>';
+    });
+    if (readyN) h += '<button class="wide" id="nall">📲 تنبيه الجاهزين (' + readyN + ')</button>';
+    h += '</div>';
+  }
+
+  const SST = { pending: ['مجدولة', 'wait'], done: ['تم', 'ok'], failed: ['فشل', 'bad'], cancelled: ['ملغية', 'wait'] };
+  h += '<div class="card"><h2>رسائل مجدولة</h2><button class="addp" id="sadd">➕ جدولة رسالة أو إجراء</button>';
+  if (!(d.sched || []).length) h += '<div class="mut">لا توجد رسائل مجدولة.</div>';
+  (d.sched || []).forEach(x => {
+    h += '<div class="cl"><div class="top"><div class="name">' + esc(x.act) + (x.target ? ' · ' + esc(x.target) : '') + '</div><span class="chip ' + SST[x.st][1] + '">' + SST[x.st][0] + '</span></div>' +
+      '<div class="meta">' + esc(x.when) + '</div>' + (x.text ? '<div class="meta" style="white-space:pre-line">' + esc(x.text) + '</div>' : '') +
+      (x.note ? '<div class="meta">' + esc(x.note) + '</div>' : '') +
+      (x.st === 'pending' ? '<div style="margin-top:8px"><button class="sdel" data-sd="' + esc(x.id) + '">إلغاء</button></div>' : '') + '</div>';
+  });
+  h += '<div class="mut" style="margin-top:8px">التنفيذ تلقائي خلال ساعة من الموعد.</div></div>';
 
   h += '<div class="card"><h2>العرض للسكان</h2>' +
     toggleRow('show_fund', 'مبلغ صندوق الصيانة', 'يظهر في صفحة الساكن', d.show.fund) +
     toggleRow('show_project', 'مبلغ المشروع المفتوح', 'ما تم تحصيله من المطلوب', d.show.project) +
+    toggleRow('show_project_fund', 'صندوق المشروع (الفائض)', 'رصيد كل مشروع في صفحة الساكن', d.show.project_fund) +
+    toggleRow('monthly_on', 'صندوق الصيانة الشهري', 'يظهر أول كل شهر للسكان (المبلغ من الإعدادات)', d.show.monthly_on) +
     toggleRow('show_quote', 'جملة اليوم', 'جملة قصيرة يومية أعلى الصفحة', d.show.quote) + '</div>';
 
-  h += '<div class="card"><h2>الإعلان</h2><textarea id="ann" maxlength="500" placeholder="يظهر أعلى صفحة السكان، واتركه فارغاً لإخفائه">' + esc(d.announcement) + '</textarea>' +
-    '<button class="btn" id="annsv">حفظ الإعلان</button></div>';
+  const anns = d.announcements || [d.announcement || '', '', ''];
+  h += '<div class="card"><h2>الإعلانات (حتى 3)</h2><div class="mut" style="margin-bottom:10px">تظهر أعلى صفحة السكان، واترك أي خانة فارغة لإخفائها.</div>' +
+    [0, 1, 2].map(i => '<div class="mut" style="margin:10px 0 4px">إعلان ' + (i + 1) + '</div><textarea id="ann' + i + '" maxlength="500" placeholder="اكتب الإعلان هنا">' + esc(anns[i] || '') + '</textarea>').join('') +
+    '<button class="btn" id="annsv">حفظ الإعلانات</button></div>';
 
   $('view').innerHTML = h;
   window.scrollTo(0, sc);
 
-  $('out').onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} CODE = ''; D = null; $('view').hidden = true; $('login').hidden = false; $('code').value = ''; };
+  $('out').onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} CODE = ''; TOK = ''; D = null; $('view').hidden = true; $('login').hidden = false; $('code').value = ''; };
   $('rf').onclick = () => { reload(); toast('تم التحديث'); };
   $('addp').onclick = addProject;
+  $('sadd').onclick = addSched;
+  document.querySelectorAll('[data-sd]').forEach(b => b.onclick = async () => {
+    if (!confirm('إلغاء هذه الرسالة المجدولة؟')) return;
+    b.disabled = true; BUSY = true;
+    try { const r = await api({ action: 'a_sched_del', id: b.dataset.sd }); if (r.ok) { toast('تم الإلغاء'); await reload(); } else toast(ERR[r.error] || 'تعذر الإلغاء'); } catch (e) { toast('تعذر الاتصال'); }
+    b.disabled = false; BUSY = false;
+  });
+  document.querySelectorAll('.wk').forEach(b => b.onclick = async () => {
+    b.disabled = true; BUSY = true;
+    try {
+      const r = await api({ action: 'a_status', item: b.dataset.c, work: b.dataset.w });
+      if (r.ok) { toast('تم تحديث حالة التنفيذ'); await reload(); }
+      else toast(ERR[r.error] || 'تعذر الحفظ');
+    } catch (e) { toast('تعذر الاتصال'); }
+    b.disabled = false; BUSY = false;
+  });
   document.querySelectorAll('.sw').forEach(b => b.onclick = async () => {
     const on = !b.classList.contains('on'); b.disabled = true; BUSY = true;
     try {
@@ -300,13 +379,20 @@ function render() {
   });
   $('annsv').onclick = async () => {
     $('annsv').disabled = true; BUSY = true;
-    try { const r = await api({ action: 'a_ann', text: $('ann').value }); toast(r.ok ? 'تم حفظ الإعلان' : (ERR[r.error] || 'تعذر الحفظ')); } catch (e) { toast('تعذر الاتصال'); }
+    try { const r = await api({ action: 'a_ann', texts: [0, 1, 2].map(i => $('ann' + i).value) }); toast(r.ok ? 'تم حفظ الإعلانات' : (ERR[r.error] || 'تعذر الحفظ')); } catch (e) { toast('تعذر الاتصال'); }
     $('annsv').disabled = false; BUSY = false;
   };
   document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => decide(d.claims[Number(b.dataset.c)], 'c', ''));
   document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => askReject(d.claims[Number(b.dataset.r)]));
   document.querySelectorAll('[data-w]').forEach(b => b.onclick = () => window.open(waLink(d.late[Number(b.dataset.w)]), '_blank'));
+  document.querySelectorAll('[data-adp]').forEach(b => b.onclick = () => adAct(b.dataset.adp, 'p', ''));
+  document.querySelectorAll('[data-adr]').forEach(b => b.onclick = () => askAdReject(b.dataset.adr));
+  document.querySelectorAll('[data-adx]').forEach(b => b.onclick = () => { if (confirm('إزالة الإعلان؟')) adAct(b.dataset.adx, 'x', ''); });
   const all = $('all'); if (all) all.onclick = queue;
+  const ns = $('nsel'); if (ns) ns.onchange = () => { NSEL = ns.value; render(); };
+  document.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { const c = curNotify(); notifyOne(c, c.list[+b.dataset.n]); });
+  const na = $('nall'); if (na) na.onclick = notifyQueue;
+  const ml = $('mailall'); if (ml) ml.onclick = askMail;
 }
 
 async function decide(c, act, note) {
@@ -317,6 +403,23 @@ async function decide(c, act, note) {
     await reload();
   } catch (e) { toast('تعذر الاتصال'); }
   BUSY = false;
+}
+
+async function adAct(id, act, note) {
+  if (BUSY) return; BUSY = true;
+  try {
+    const r = await api({ action: 'a_ad', id, act, note });
+    toast(r.ok ? r.msg : (ERR[r.error] || 'تعذر التنفيذ'));
+    await reload();
+  } catch (e) { toast('تعذر الاتصال'); }
+  BUSY = false;
+}
+function askAdReject(id) {
+  const s = sheet('<h2>رفض الإعلان</h2><div class="mut">السبب يظهر للساكن (اختياري)</div>' +
+    '<div class="field"><input class="t" id="arn" maxlength="200" placeholder="مثال: الإعلان غير مناسب"></div>' +
+    '<button class="btn" id="arok">تأكيد الرفض</button><button class="cancel" id="arcx">إلغاء</button>');
+  $('arcx').onclick = s.close;
+  $('arok').onclick = () => { const n = $('arn').value; s.close(); adAct(id, 'r', n); };
 }
 
 function sheet(html) {
@@ -335,6 +438,52 @@ function askReject(c) {
   $('rok').onclick = () => { const n = $('rn').value; s.close(); decide(c, 'r', n); };
 }
 
+function askMail() {
+  const withMail = D.late.filter(x => x.mail).length, noMail = D.late.length - withMail;
+  const s = sheet('<h2>إيميل للمتأخرين</h2><div class="mut">هيتبعت تذكير بإيميل لـ ' + withMail + ' شقة' + (noMail ? '، و' + noMail + ' متأخرين بدون إيميل (واتساب فقط)' : '') + '. الشقة الواحدة مش بتستلم أكتر من إيميل في اليوم.</div>' +
+    '<button class="btn" id="mok">إرسال</button><button class="cancel" id="mcx">إلغاء</button>');
+  $('mcx').onclick = s.close;
+  $('mok').onclick = async () => {
+    $('mok').disabled = true; BUSY = true;
+    try {
+      const r = await api({ action: 'a_mail' });
+      s.close();
+      if (r.ok) toast('اتبعت ' + r.sent + (r.already ? ' · اتبعت قبل كده اليوم: ' + r.already : '') + (r.failed ? ' · فشل: ' + r.failed : '') + (r.noquota ? ' · وقف الحد اليومي: ' + r.noquota : ''));
+      else toast(ERR[r.error] || 'تعذر الإرسال');
+    } catch (e) { s.close(); toast('تعذر الاتصال'); }
+    BUSY = false;
+  };
+}
+function curNotify() { return (D.notify || []).find(i => i.code === NSEL) || (D.notify || [])[0]; }
+function nWaLink(it, x) {
+  const m = 'السلام عليكم، شقة ' + x.apt + '. تم فتح بند جديد في صندوق عمارة 220 حي القرنفل: «' + it.desc + '». المطلوب منكم ' + it.amount + ' جنيه' +
+    (it.due ? ' قبل ' + it.due : '') + (D.pageUrl ? '، وتفاصيله ومساهمتكم عبر: ' + D.pageUrl : '.') + ' جزاكم الله خيراً.';
+  return 'https://wa.me/' + x.phone + '?text=' + encodeURIComponent(m);
+}
+async function notifyOne(it, x, quiet) {
+  window.open(nWaLink(it, x), '_blank');
+  try {
+    const r = await api({ action: 'a_notify_mark', apt: x.apt, item: it.code });
+    if (r.ok) { x.ready = false; x.last = new Date().toISOString().slice(0, 10); x.left = 3; if (!quiet) { toast('تم تسجيل التنبيه'); render(); } }
+    else if (!quiet) toast(ERR[r.error] || 'تعذر التسجيل');
+  } catch (e) { if (!quiet) toast('تعذر الاتصال'); }
+}
+function notifyQueue() {
+  const it = curNotify(), list = it.list.filter(x => x.phone && x.ready); let i = 0;
+  const s = sheet('<div id="qb"></div>');
+  const paint = () => {
+    if (i >= list.length) { $('qb').innerHTML = '<h2>تم 🎉</h2><div class="mut">انتهت قائمة التنبيهات.</div><button class="btn" id="qx">إغلاق</button>'; $('qx').onclick = () => { s.close(); render(); }; return; }
+    const x = list[i];
+    $('qb').innerHTML = '<div class="mut">' + (i + 1) + ' من ' + list.length + '</div><h2>شقة ' + esc(x.apt) + (x.name ? ' · ' + esc(x.name) : '') + '</h2>' +
+      '<div class="mut">' + esc(it.desc) + ' · المتبقي ' + money(x.remaining) + '</div>' +
+      '<button class="btn" id="qo">📲 افتح واتساب وأرسل</button><button class="cancel" id="qs">تخطي</button><button class="cancel" id="qx">إنهاء</button>';
+    $('qo').onclick = () => { notifyOne(it, x, true); i++; paint(); };
+    $('qs').onclick = () => { i++; paint(); };
+    $('qx').onclick = () => { s.close(); render(); };
+  };
+  paint();
+}
+
 function queue() {
   const list = D.late.filter(x => x.phone); let i = 0;
   const s = sheet('<div id="qb"></div>');
@@ -349,6 +498,46 @@ function queue() {
     $('qx').onclick = s.close;
   };
   paint();
+}
+
+function addSched() {
+  const KEYS = ['رصيد الصندوق', 'تحصيل المشروع', 'صندوق المشروع', 'جملة اليوم'];
+  const opts = a => a.map(v => '<option>' + esc(v) + '</option>').join('');
+  const tomorrow = new Date(Date.now() + 86400000), pad = n => String(n).padStart(2, '0');
+  const s = sheet('<h2>جدولة جديدة</h2>' +
+    '<div class="field"><label>الإجراء</label><select id="sa">' + opts(['إعلان', 'إيميل', 'إظهار', 'إخفاء']) + '</select></div>' +
+    '<div class="field" id="stw"><label id="stl"></label><select id="st"></select></div>' +
+    '<div class="field" id="sew" hidden><label>أرقام الشقق (بفاصلة)</label><input class="t" id="se" placeholder="مثال: 1, 4, 7"></div>' +
+    '<div class="field" id="sxw"><label>النص</label><textarea id="sx" maxlength="1500" placeholder="اكتب النص هنا"></textarea></div>' +
+    '<div class="field"><label>التاريخ</label><input class="t" id="sd" type="date" value="' + tomorrow.getFullYear() + '-' + pad(tomorrow.getMonth() + 1) + '-' + pad(tomorrow.getDate()) + '"></div>' +
+    '<div class="field"><label>الوقت</label><input class="t" id="sm" type="time" value="09:00"></div>' +
+    '<div class="mut" style="margin-top:8px">التنفيذ خلال ساعة من الموعد (بتوقيت القاهرة). الإيميل لمن له إيميل مسجّل، وشقة واحدة لا تستلم أكتر من رسالة مجدولة في اليوم.</div>' +
+    '<div id="serr" class="err"></div><button class="btn" id="ssv">جدولة</button><button class="cancel" id="scx">إلغاء</button>');
+  const sync = () => {
+    const a = $('sa').value, tg = $('st');
+    $('sxw').hidden = (a === 'إظهار' || a === 'إخفاء');
+    $('sew').hidden = true;
+    if (a === 'إعلان') { $('stl').textContent = 'رقم الإعلان (النص فاضي = مسح الإعلان)'; tg.innerHTML = opts(['1', '2', '3']); }
+    else if (a === 'إيميل') { $('stl').textContent = 'المستلمون'; tg.innerHTML = opts(['الكل', 'المتأخرين', 'شقق محددة']); }
+    else { $('stl').textContent = a === 'إظهار' ? 'ما الذي يظهر' : 'ما الذي يختفي'; tg.innerHTML = opts(KEYS); }
+  };
+  const sync2 = () => { $('sew').hidden = !($('sa').value === 'إيميل' && $('st').value === 'شقق محددة'); };
+  $('sa').onchange = () => { sync(); sync2(); };
+  $('st').onchange = sync2;
+  sync();
+  $('scx').onclick = s.close;
+  $('ssv').onclick = async () => {
+    const a = $('sa').value;
+    let tg = $('st').value;
+    if (a === 'إيميل' && tg === 'شقق محددة') tg = nd($('se').value);
+    $('ssv').disabled = true; $('serr').textContent = '';
+    try {
+      const r = await api({ action: 'a_sched_add', act: a, target: tg, text: $('sx').value, date: $('sd').value, time: $('sm').value });
+      if (r.ok) { s.close(); toast('تمت الجدولة'); reload(); return; }
+      $('serr').textContent = ERR[r.error] || 'تعذر الحفظ.';
+    } catch (e) { $('serr').textContent = 'تعذر الاتصال، حاول مرة أخرى.'; }
+    $('ssv').disabled = false;
+  };
 }
 
 function addProject() {
@@ -373,9 +562,13 @@ function addProject() {
 
 $('go').onclick = () => { const c = nd($('code').value); if (c) load(c); };
 $('code').addEventListener('keydown', e => { if (e.key === 'Enter') $('go').click(); });
-try { const c = localStorage.getItem(KEY); if (c) load(c, true); } catch (e) {}
+try {
+  const t = localStorage.getItem(KEY), old = localStorage.getItem(OLDKEY);
+  if (old) localStorage.removeItem(OLDKEY); // الرمز القديم المخزّن كما هو: يُستخدم مرة للدخول ثم يُمسح
+  if (t) { TOK = t; load('', true); } else if (old) load(old, true);
+} catch (e) {}
 // تحديث تلقائي كل دقيقة لو لا توجد نافذة مفتوحة، فيظهر أي تعديل تم في الشيت
-setInterval(() => { if (CODE && !BUSY && !document.hidden && !document.querySelector('.ov') && !(document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName))) reload(); }, 60000);
+setInterval(() => { if (TOK && !BUSY && !document.hidden && !document.querySelector('.ov') && !(document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName))) reload(); }, 60000);
 </script>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#16294d">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>صيانة عمارة 220</title>
+<title>الإدارة والتنفيذ - عمارة 220</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Noto+Kufi+Arabic:wght@500;600;700&display=swap" rel="stylesheet">
@@ -152,11 +152,11 @@ textarea:focus{border-color:var(--ac)}
         </g>
       </svg></div>
   <h1>عمارة 220</h1>
-  <div class="sub"><i></i>مسؤول الصيانة<i></i></div>
+  <div class="sub"><i></i>الإدارة والتنفيذ<i></i></div>
 </header>
 <div class="wrap">
   <div id="login" class="card login">
-    <h2>دخول مسؤول الصيانة</h2>
+    <h2>دخول الإدارة والتنفيذ</h2>
     <div class="mut">اكتب الرمز الخاص بك لعرض المهام</div>
     <div class="field"><label>الرمز</label><input id="code" type="password" autocomplete="off"></div>
     <button id="go" class="btn">دخول</button>
@@ -174,22 +174,23 @@ const $ = id => document.getElementById(id);
 const nd = s => String(s).replace(/[٠-٩]/g, c => c.charCodeAt(0) - 1632).replace(/[۰-۹]/g, c => c.charCodeAt(0) - 1776).trim();
 const money = n => Number(n).toLocaleString('en-US') + ' جنيه';
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const KEY = 'bf_maint';
-let CODE = '', DID = '', TASKS = [];
+// نخزّن رمز جلسة موقّع (ينتهي بعد مدة ويبطل لو اتغيّر رمزك أو اتوقفت) بدل الرمز نفسه
+const KEY = 'bf_maint_t', OLDKEY = 'bf_maint';
+let CODE = '', TOK = '', DID = '', TASKS = [];
 try {
   DID = localStorage.getItem('bf_did') || '';
   if (!DID) { DID = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)).slice(0, 8); localStorage.setItem('bf_did', DID); }
 } catch (e) { DID = 'nostore'; }
 
 const ERR = {
-  bad: 'الرمز غير صحيح.', locked: 'تم قفل الدخول مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.',
-  off: 'صفحة الصيانة غير مفعّلة بعد، كلّم أمين الصندوق.', status: 'الحالة غير صحيحة.',
+  bad: 'الرمز غير صحيح.', expired: 'انتهت الجلسة، اكتب رمزك من جديد.', locked: 'تم قفل الدخول مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.',
+  off: 'صفحة الإدارة والتنفيذ غير مفعّلة بعد، كلّم أمين الصندوق.', status: 'الحالة غير صحيحة.',
   cost: 'التكلفة غير صحيحة.', file: 'الصورة غير مقبولة، جرّب صورة أخرى.', task: 'المهمة لم تعد موجودة، حدّث الصفحة.'
 };
 const STC = { 'جديدة': 'wait', 'جارية': 'run', 'منتهية': 'ok' };
 
 async function api(body) {
-  const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ code: CODE, did: DID }, body)) });
+  const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ code: CODE, tok: CODE ? '' : TOK, did: DID }, body)) });
   return r.json();
 }
 async function compress(file) {
@@ -211,11 +212,12 @@ async function load(code, auto) {
   try {
     const d = await api({ action: 'm_list' });
     if (!d.ok) {
-      if (auto && d.error === 'bad') { try { localStorage.removeItem(KEY); } catch (e) {} }
+      if (d.error === 'expired' || (auto && d.error === 'bad')) { try { localStorage.removeItem(KEY); } catch (e) {} TOK = ''; }
       $('err').textContent = ERR[d.error] || 'تعذر الدخول.';
       $('login').hidden = false; $('view').hidden = true;
     } else {
-      try { localStorage.setItem(KEY, code); } catch (e) {}
+      if (d.tok) { TOK = d.tok; try { localStorage.setItem(KEY, TOK); } catch (e) {} }
+      CODE = '';
       TASKS = d.tasks; render(d);
     }
   } catch (e) { $('err').textContent = 'تعذر الاتصال، حاول مرة أخرى.'; }
@@ -237,8 +239,8 @@ function render(d) {
     h += '<button class="upd" data-i="' + i + '">تحديث المهمة</button></div>';
   });
   $('view').innerHTML = h;
-  $('out').onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} CODE = ''; $('view').hidden = true; $('login').hidden = false; $('code').value = ''; };
-  $('rf').onclick = () => load(CODE);
+  $('out').onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} CODE = ''; TOK = ''; $('view').hidden = true; $('login').hidden = false; $('code').value = ''; };
+  $('rf').onclick = () => load('');
   document.querySelectorAll('.upd').forEach(b => b.onclick = () => edit(TASKS[Number(b.dataset.i)]));
 }
 
@@ -272,7 +274,7 @@ function edit(t) {
       const body = { action: 'm_update', id: t.id, status: st, cost: nd($('cost').value).replace(/[٫,]/g, '.'), note: $('note').value };
       if (file) { body.mime = 'image/jpeg'; body.data = await compress(file); }
       const d = await api(body);
-      if (d.ok) { close(); toast('تم الحفظ ✓'); load(CODE); return; }
+      if (d.ok) { close(); toast('تم الحفظ ✓'); load(''); return; }
       if (ERR[d.error]) msg = ERR[d.error];
     } catch (e) {}
     $('aerr').textContent = msg;
@@ -282,7 +284,11 @@ function edit(t) {
 
 $('go').onclick = () => { const c = nd($('code').value); if (c) load(c); };
 $('code').addEventListener('keydown', e => { if (e.key === 'Enter') $('go').click(); });
-try { const c = localStorage.getItem(KEY); if (c) load(c, true); } catch (e) {}
+try {
+  const t = localStorage.getItem(KEY), old = localStorage.getItem(OLDKEY);
+  if (old) localStorage.removeItem(OLDKEY); // الرمز القديم: يُستخدم مرة للدخول ثم يُمسح
+  if (t) { TOK = t; load('', true); } else if (old) load(old, true);
+} catch (e) {}
 </script>
 </body>
 </html>
