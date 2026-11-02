@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#16294d">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="عمارة 220">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <title>عمارة 220 - حي القرنفل</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -201,9 +207,17 @@ a.vw{color:var(--ac);font-weight:800;text-decoration:underline;cursor:pointer;ma
 .cbox a{flex:1;text-align:center;padding:10px 6px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;text-decoration:none;font-weight:700;font-size:14px}
 .cbox a.wa{background:linear-gradient(135deg,#128c7e,#25d366)}
 [hidden]{display:none!important}
+.netbar{position:fixed;top:0;inset-inline:0;z-index:70;padding:calc(6px + env(safe-area-inset-top,0px)) 12px 6px;text-align:center;font-size:13px;font-weight:700;background:var(--warnbg);color:var(--warn);border-bottom:1px solid var(--br)}
+.netbar[hidden]{display:none}
+.nts{margin:12px 0 0}
+.nt{display:flex;align-items:flex-start;gap:10px;background:var(--card);border:1px solid var(--br);border-inline-start:4px solid var(--rose);border-radius:14px;padding:10px 12px;margin:0 0 8px;box-shadow:var(--sh);font-size:14px;line-height:1.7;cursor:pointer}
+.nt.ok{border-inline-start-color:var(--ok)}.nt.bad{border-inline-start-color:var(--bad)}
+.nt .nb{flex:1}.nt .ntm{color:var(--mut);font-size:12px}
+.nt .nx{background:none;border:0;color:var(--mut);font-size:16px;cursor:pointer;padding:0 4px;font-family:inherit}
 </style>
 </head>
 <body>
+<div id="netbar" class="netbar" role="status" hidden></div>
 <button class="mbtn" id="mbtn" aria-label="القائمة" hidden>☰</button>
 <header class="brand">
   <div class="emb"><svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true">
@@ -269,7 +283,12 @@ const EN = {
   'الصورة غير مقبولة، جرّب صورة أخرى.': 'Image not accepted, try another one.',
   'انتهت الجلسة، حدّث الصفحة واكتب الرقم السري من جديد.': 'Session expired. Refresh the page and enter your PIN again.',
   'المبلغ بالجنيه': 'Amount (EGP)', '📎 اختيار صورة الإيصال ورفعها': '📎 Choose receipt photo & upload', 'إلغاء': 'Cancel',
-  'جاري رفع الإيصال...': 'Uploading receipt...', 'تعذر الرفع، حاول مرة أخرى.': 'Upload failed, please try again.',
+  'تثبيت كتطبيق': 'Install as app', 'تثبيت التطبيق': 'Install the app', 'حسناً': 'OK',
+  'في آيفون: اضغط زر المشاركة ⬆️ في Safari، ثم «إضافة إلى الشاشة الرئيسية».': 'On iPhone: tap the Share button ⬆️ in Safari, then “Add to Home Screen”.',
+  'في أندرويد: اضغط ⋮ أعلى المتصفح، ثم «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».': 'On Android: tap ⋮ in the browser, then “Install app” or “Add to Home screen”.',
+  'بعد التثبيت قد تحتاج لكتابة الرقم السري مرة واحدة داخل التطبيق.': 'After installing you may need to enter your PIN once inside the app.',
+  'تم رفع الإيصال ✓': 'Receipt uploaded ✓', 'بدون اتصال': 'Offline', 'آخر تحديث': 'Last updated', 'الآن': 'just now',
+  'جاري التحميل...': 'Loading...', 'جاري رفع الإيصال...': 'Uploading receipt...', 'تعذر الرفع، حاول مرة أخرى.': 'Upload failed, please try again.',
   'جنيه': 'EGP', 'شقة': 'Apartment', 'التنفيذ': 'Work', 'تم ✓': 'Done ✓', 'جاري': 'In progress',
   'اكتمل إسهامك ✓': 'Your contribution is complete ✓', 'شكراً لمساهمتك في عمارتنا': 'Thank you for contributing to our building',
   'إسهامك المتبقي': 'Your remaining contribution', 'الإسهام المقرر': 'Required contribution', 'ما أسهمت به': 'Contributed so far', 'نسبة الإنجاز': 'Progress',
@@ -336,8 +355,22 @@ function setTheme(v) {
 const KEY = 'bf_login';
 // نخزّن رمز جلسة موقّع من السيرفر (ينتهي ويبطل لو اتغيّر الرقم السري) بدل الرقم السري نفسه
 const save = (a, t) => { try { localStorage.setItem(KEY, JSON.stringify({ a, t })); } catch (e) {} };
-const clear = () => { try { localStorage.removeItem(KEY); } catch (e) {} };
-let DATA = null, CUR = null, LAST = null;
+const CKEY = 'bf_cache';
+const clear = () => { try { localStorage.removeItem(KEY); localStorage.removeItem(CKEY); } catch (e) {} };
+// آخر بيانات اتعرضت للشقة (بدون الرقم السري ولا الرمز) عشان الصفحة تفتح فوراً وتتحدّث في الخلفية
+function cacheSave(d) {
+  try { if (!CUR || (d.items || []).some(i => i.uploading)) return; const c = Object.assign({}, d); delete c.tok; localStorage.setItem(CKEY, JSON.stringify({ a: CUR.a, d: c })); } catch (e) {}
+}
+function cacheLoad(a) {
+  try { const c = JSON.parse(localStorage.getItem(CKEY) || 'null'); return c && c.a === a && c.d && c.d.ok ? c.d : null; } catch (e) { return null; }
+}
+function showLogin() {
+  CUR = null; DATA = null;
+  $('view').hidden = true; $('view').innerHTML = ''; $('mbtn').hidden = true;
+  try { closeMenu(); } catch (e) {}
+  $('login').hidden = false; $('go').disabled = false;
+}
+let DATA = null, CUR = null, LAST = null, UPLOADING = false;
 let DID = '';
 try {
   DID = localStorage.getItem('bf_did') || '';
@@ -365,9 +398,11 @@ async function login(apt, pin, auto, tok) {
         ? t('تم قفل الشقة مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.')
         : d.error === 'expired' ? t('انتهت الجلسة، اكتب الرقم السري من جديد.')
         : t('رقم الشقة أو الرقم السري غير صحيح.');
-    } else { save(apt, d.tok); CUR = { a: apt, t: d.tok }; render(d); }
+      if (auto) showLogin();
+    } else { save(apt, d.tok); CUR = { a: apt, t: d.tok }; render(d); markFresh(); }
   } catch (e) {
     $('err').textContent = t('تعذر الاتصال، حاول مرة أخرى.');
+    if (auto) showLogin();
   }
   $('go').disabled = false;
 }
@@ -418,24 +453,31 @@ function askAmount(b) {
     inp.onchange = async () => {
       const f = inp.files[0];
       if (!f) return;
-      $('pick').disabled = true; $('pick').textContent = t('جاري رفع الإيصال...'); $('aerr').textContent = '';
+      const method = $('mth') ? $('mth').value : (METHODS[0] || '');
+      // تأكيد فوري: نقفل النافذة ونعرض البند «جاري رفع الإيصال» قبل ما السيرفر يرد، ولو فشل نرجّع الحالة السابقة
+      const prev = JSON.parse(JSON.stringify(DATA));
+      const it = (DATA.items || []).find(x => String(x.code) === String(code));
+      if (it) { it.pending = true; it.pendingAmount = amt; it.uploading = true; }
+      UPLOADING = true; close(); render(DATA, true);
       let msg = t('تعذر الرفع، حاول مرة أخرى.');
       try {
         const data = await compress(f);
         const r = await fetch(API_URL, {
           method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'upload', apt: CUR.a, tok: CUR.t, did: DID, code: code, amount: amt, method: $('mth') ? $('mth').value : (METHODS[0] || ''), mime: 'image/jpeg', data })
+          body: JSON.stringify({ action: 'upload', apt: CUR.a, tok: CUR.t, did: DID, code: code, amount: amt, method: method, mime: 'image/jpeg', data })
         });
         const x = await r.json();
         if (x.ok) {
           // رسالة واتساب لأمين الصندوق تفضل بالعربي دايماً
-          LAST = { code: code, msg: 'شقة ' + CUR.a + ': ساهمت بمبلغ ' + amt + ' جنيه في بند "' + desc + '". رفعت الإيصال في الموقع.' };
-          close(); login(CUR.a, '', false, CUR.t); return;
+          LAST = { code: code, msg: 'شقة ' + CUR.a + ': ساهمت بمبلغ ' + amt + ' جنيه في بند \"' + desc + '\". رفعت الإيصال في الموقع.' };
+          if (it) it.uploading = false;
+          UPLOADING = false; render(DATA, true); toast(t('تم رفع الإيصال ✓'));
+          silentRefresh(true);
+          return;
         }
         if (ERR[x.error]) msg = t(ERR[x.error]);
       } catch (e) {}
-      $('aerr').textContent = msg;
-      $('pick').disabled = false; $('pick').textContent = t('📎 اختيار صورة الإيصال ورفعها');
+      UPLOADING = false; render(prev, true); toast(msg);
     };
     inp.click();
   };
@@ -551,6 +593,30 @@ function openMyAds() {
 function openMenu() { $('mov').hidden = false; $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false'); }
 function closeMenu() { $('mov').hidden = true; $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden', 'true'); }
 function doLogout() { clear(); history.replaceState(null, '', location.pathname); location.reload(); }
+// ---------- تثبيت كتطبيق ----------
+let INSTALL_EVT = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); INSTALL_EVT = e; });
+window.addEventListener('appinstalled', () => { INSTALL_EVT = null; try { buildMenu(); } catch (e) {} });
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+async function installApp() {
+  closeMenu();
+  if (INSTALL_EVT) {
+    const ev = INSTALL_EVT; INSTALL_EVT = null;
+    try { ev.prompt(); await ev.userChoice; } catch (e) {}
+    return;
+  }
+  const ov = document.createElement('div');
+  ov.className = 'ov';
+  ov.innerHTML = '<div class="sheet"><h2>' + t('تثبيت التطبيق') + '</h2>' +
+    '<div class="mut" style="line-height:1.9">' + t('في آيفون: اضغط زر المشاركة ⬆️ في Safari، ثم «إضافة إلى الشاشة الرئيسية».') + '<br><br>' +
+    t('في أندرويد: اضغط ⋮ أعلى المتصفح، ثم «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».') + '<br><br>' +
+    t('بعد التثبيت قد تحتاج لكتابة الرقم السري مرة واحدة داخل التطبيق.') + '</div>' +
+    '<button class="btn" id="icx" style="margin-top:14px">' + t('حسناً') + '</button></div>';
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  $('icx').onclick = close;
+  ov.onclick = e => { if (e.target === ov) close(); };
+}
 function buildMenu() {
   const hasC = CREATOR.phone || CREATOR.email;
   const seg = (name, cur, opts) => '<div class="seg">' + opts.map(o => '<button data-' + name + '="' + o[0] + '" class="' + (cur === o[0] ? 'on' : '') + '">' + o[1] + '</button>').join('') + '</div>';
@@ -568,10 +634,12 @@ function buildMenu() {
       (CREATOR.email ? '<a href="mailto:' + esc(CREATOR.email) + '">' + t('✉️ إيميل') + '</a>' : '') +
       '</div></div></div>';
   }
+  if (!isStandalone()) h += '<div class="ms"><button class="mi" id="minst">📲 ' + t('تثبيت كتطبيق') + '</button></div>';
   h += '<button class="mi danger" id="mout">🚪 ' + t('تسجيل الخروج') + '</button>';
   $('drawer').innerHTML = h;
   $('mx').onclick = closeMenu;
   $('mout').onclick = doLogout;
+  const mi = $('minst'); if (mi) mi.onclick = installApp;
   document.querySelectorAll('#drawer button[data-theme]').forEach(b => b.onclick = () => setTheme(b.dataset.theme));
   document.querySelectorAll('#drawer button[data-lang]').forEach(b => b.onclick = () => setLang(b.dataset.lang));
   $('mmkt').onclick = () => { closeMenu(); openMarket(); };
@@ -603,8 +671,69 @@ function startTicker() {
   tt.style.setProperty('--d', Math.max(14, Math.round(w / 55)) + 's');
 }
 
+// ---------- إشعارات داخل الصفحة (بدون سيرفر): تأكيد/رفض الإيصال، إعلانات جديدة، حالة إعلاناتي ----------
+// نقارن آخر بيانات وصلت بآخر حالة اتشافت على الجهاز، وأي فرق يتحول لكارت إشعار في أول الصفحة لحد ما الساكن يقفله.
+const NKEY = a => 'bf_nt_' + a, SKEY = a => 'bf_seen_' + a;
+function nLoad() {
+  try { const l = JSON.parse(localStorage.getItem(NKEY(CUR.a)) || '[]'); return l.filter(n => Date.now() - n.ts < 14 * 86400000); } catch (e) { return []; }
+}
+function nSave(l) { try { localStorage.setItem(NKEY(CUR.a), JSON.stringify(l.slice(0, 10))); } catch (e) {} }
+function detectNotes(d) {
+  if (!CUR || !d || d.ok !== true) return;
+  let seen = null;
+  try { seen = JSON.parse(localStorage.getItem(SKEY(CUR.a)) || 'null'); } catch (e) {}
+  const csig = c => c.date + '|' + c.desc + '|' + c.amount;
+  const cur = { cl: {}, ads: (d.ads || []).map(a => String(a.id)), my: {} };
+  (d.claims || []).forEach(c => { cur.cl[csig(c)] = c.status; });
+  (d.myAds || []).forEach(a => { cur.my[a.id] = a.status; });
+  if (seen && seen.cl && seen.ads && seen.my) {
+    const list = nLoad(), have = {}; list.forEach(n => { have[n.k] = 1; });
+    const add = n => { if (!have[n.k]) { have[n.k] = 1; n.ts = Date.now(); list.unshift(n); } };
+    (d.claims || []).forEach(c => {
+      if ((c.status !== 'confirmed' && c.status !== 'rejected') || seen.cl[csig(c)] === c.status) return;
+      add({ k: 'c_' + csig(c) + '_' + c.status, ty: c.status === 'confirmed' ? 'cok' : 'crej', a: c.amount, d: c.desc, n: c.note || '' });
+    });
+    const newAds = (d.ads || []).filter(a => a.apt !== CUR.a && seen.ads.indexOf(String(a.id)) < 0);
+    if (newAds.length) add({ k: 'a_' + newAds.map(a => a.id).join(','), ty: 'ads', a: newAds.length, d: String(newAds[0].text || '').slice(0, 70), n: '' });
+    (d.myAds || []).forEach(a => {
+      const was = seen.my[a.id];
+      if (!was || was === a.status || (a.status !== 'published' && a.status !== 'rejected')) return;
+      add({ k: 'm_' + a.id + '_' + a.status, ty: a.status === 'published' ? 'myok' : 'myrej', a: 0, d: String(a.text || '').slice(0, 70), n: a.note || '' });
+    });
+    nSave(list);
+  }
+  try { localStorage.setItem(SKEY(CUR.a), JSON.stringify(cur)); } catch (e) {}
+}
+function noteText(n) {
+  const en = LANG === 'en', dd = esc(n.d || '');
+  if (n.ty === 'cok') return { i: '✅', c: 'ok', x: en ? 'Your receipt of ' + money(n.a) + ' was confirmed' : 'تم تأكيد إيصالك بمبلغ ' + money(n.a), s: dd, go: '' };
+  if (n.ty === 'crej') return { i: '❌', c: 'bad', x: en ? 'Your receipt of ' + money(n.a) + ' was rejected' : 'تم رفض إيصالك بمبلغ ' + money(n.a), s: dd + (n.n ? ' · ' + esc(n.n) : ''), go: '' };
+  if (n.ty === 'ads') return { i: '🏪', c: '', x: en ? (n.a > 1 ? n.a + ' new listings in the building market' : 'New listing in the building market') : (n.a > 1 ? n.a + ' إعلانات جديدة في سوق العمارة' : 'إعلان جديد في سوق العمارة'), s: n.a > 1 ? '' : dd, go: 'market' };
+  if (n.ty === 'myok') return { i: '📣', c: 'ok', x: en ? 'Your listing was published' : 'تم نشر إعلانك', s: dd, go: 'mine' };
+  return { i: '📣', c: 'bad', x: en ? 'Your listing was rejected' : 'تم رفض إعلانك', s: dd + (n.n ? ' · ' + esc(n.n) : ''), go: 'mine' };
+}
+function notesHtml() {
+  if (!CUR) return '';
+  const l = nLoad();
+  try { document.title = (l.length ? '(' + l.length + ') ' : '') + 'عمارة 220 - حي القرنفل'; } catch (e) {}
+  if (!l.length) return '';
+  return '<div class="nts">' + l.map(n => {
+    const x = noteText(n);
+    return '<div class="nt ' + x.c + '" data-nk="' + esc(n.k) + '" data-go="' + x.go + '"><span>' + x.i + '</span><div class="nb"><b>' + x.x + '</b>' + (x.s ? '<div class="ntm">' + x.s + '</div>' : '') + '</div><button class="nx" aria-label="' + t('إغلاق') + '">✕</button></div>';
+  }).join('') + '</div>';
+}
+function bindNotes() {
+  document.querySelectorAll('.nt').forEach(el => {
+    const kill = () => { nSave(nLoad().filter(n => n.k !== el.dataset.nk)); render(DATA, true); };
+    el.querySelector('.nx').onclick = e => { e.stopPropagation(); kill(); };
+    el.onclick = () => { const g = el.dataset.go; nSave(nLoad().filter(n => n.k !== el.dataset.nk)); render(DATA, true); if (g === 'market') openMarket(); else if (g === 'mine') openMyAds(); };
+  });
+}
+
 function render(d, keepScroll) {
   DATA = d;
+  cacheSave(d);
+  try { detectNotes(d); } catch (e) {}
   const s = d.settings || {};
   const paidAll = d.remaining <= 0;
   const pct = d.required > 0 ? Math.min(100, Math.round(d.paid / d.required * 100)) : 100;
@@ -622,6 +751,7 @@ function render(d, keepScroll) {
          '<div class="stat"><b>' + pct + '%</b><span>' + t('نسبة الإنجاز') + '</span></div>' +
        '</div>') + '</div>';
 
+  h += notesHtml();
   if (d.quote) h += '<div class="qt"><div class="q">' + (d.quote.v ? '﴿' + esc(d.quote.t) + '﴾' : esc(d.quote.t)) + '</div><div class="qs">' + esc(d.quote.s) + '</div></div>';
 
   const anns = (s.announcements && s.announcements.length) ? s.announcements : (s.announcement ? [s.announcement] : []);
@@ -638,7 +768,9 @@ function render(d, keepScroll) {
          (ok ? t('مكتمل ✓') : (i.pending ? t('في انتظار التأكيد ⏳') : (late ? t('تأخر') + ' · ' : '') + money(i.remaining))) + '</span></div>' +
          '<div class="meta">' + t('الموعد') + ' ' + esc(i.due) + ' · ' + t('الإسهام') + ' ' + money(i.amount) + ' · ' + t('ما أسهمت به') + ' ' + money(i.paid) + wk(i.work) + '</div>' +
          '<div class="pb"><i style="width:' + p + '%"></i></div>';
-    if (!ok && i.pending) {
+    if (!ok && i.pending && i.uploading) {
+      h += '<div class="mut" style="margin-top:8px">⏳ ' + t('جاري رفع الإيصال...') + '</div>';
+    } else if (!ok && i.pending) {
       h += '<div class="mut" style="margin-top:8px">' + (LANG === 'en'
         ? 'A receipt of ' + money(i.pendingAmount) + ' was uploaded, awaiting the treasurer\'s confirmation.'
         : 'تم رفع إيصال بمبلغ ' + money(i.pendingAmount) + '، بانتظار تأكيد أمين الصندوق.') + '</div>';
@@ -722,6 +854,7 @@ function render(d, keepScroll) {
   }
 
   $('view').innerHTML = h;
+  bindNotes();
   $('login').hidden = true;
   $('view').hidden = false;
   $('mbtn').hidden = false;
@@ -749,6 +882,70 @@ function render(d, keepScroll) {
   });
 }
 
+// ---------- شريط الاتصال: يظهر لما النت يفصل، مع وقت آخر تحديث ----------
+let LASTOK = 0, NETFAIL = false;
+try { LASTOK = Number(localStorage.getItem('bf_cts')) || 0; } catch (e) {}
+function agoTxt(ms) {
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return t('الآن');
+  const h = Math.floor(m / 60), d = Math.floor(h / 24);
+  if (LANG === 'en') return (d ? d + ' d' : h ? h + ' h' : m + ' min') + ' ago';
+  return 'منذ ' + (d ? d + (d === 1 ? ' يوم' : ' أيام') : h ? h + (h === 1 ? ' ساعة' : h === 2 ? ' ساعتين' : ' ساعات') : m + (m === 1 ? ' دقيقة' : m === 2 ? ' دقيقتين' : m <= 10 ? ' دقائق' : ' دقيقة'));
+}
+function netBar() {
+  const el = $('netbar'); if (!el) return;
+  const off = !navigator.onLine || NETFAIL;
+  if (!off || !CUR) { el.hidden = true; return; }
+  el.textContent = '⚠️ ' + t('بدون اتصال') + (LASTOK ? ' · ' + t('آخر تحديث') + ' ' + agoTxt(Date.now() - LASTOK) : '');
+  el.hidden = false;
+}
+function markFresh() {
+  LASTOK = Date.now(); NETFAIL = false;
+  try { localStorage.setItem('bf_cts', String(LASTOK)); } catch (e) {}
+  netBar();
+}
+window.addEventListener('offline', netBar);
+window.addEventListener('online', () => { netBar(); silentRefresh(); });
+setInterval(netBar, 30000);
+if ('serviceWorker' in navigator && location.protocol === 'https:') { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
+
+// تحديث تلقائي صامت: كل دقيقة، وفور الرجوع للصفحة. لا يمس الشاشة إلا لو البيانات اتغيّرت فعلاً.
+let RF_BUSY = false;
+function rfBlocked() {
+  const a = document.activeElement;
+  return !CUR || RF_BUSY || UPLOADING || document.hidden || document.querySelector('.ov') || (a && /TEXTAREA|INPUT|SELECT/.test(a.tagName));
+}
+let RF_AGAIN = false;
+async function silentRefresh(force) {
+  if (force === true) { if (!CUR) return; if (RF_BUSY) { RF_AGAIN = true; return; } }
+  else if (rfBlocked()) return;
+  RF_BUSY = true;
+  const who = CUR.a + '|' + CUR.t;
+  try {
+    const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'check', apt: CUR.a, pin: '', tok: CUR.t, did: DID }) });
+    const d = await r.json();
+    // نتجاهل أي فشل أو رد متأخر، ولا نعمل تحديث لو المستخدم بدأ يكتب أو فتح نافذة أثناء الانتظار
+    if (d && !d.ok && (d.error === 'expired' || d.error === 'bad') && CUR && who === CUR.a + '|' + CUR.t) {
+      clear(); showLogin();
+      $('err').textContent = t('انتهت الجلسة، اكتب الرقم السري من جديد.');
+    } else if (d && d.ok && CUR && who === CUR.a + '|' + CUR.t) {
+      if (d.tok) { CUR.t = d.tok; save(CUR.a, d.tok); }
+      markFresh();
+      // الرمز يتغير مع كل طلب، فنقارن البيانات بدونه
+      const strip = x => JSON.stringify(Object.assign({}, x, { tok: 0 }));
+      if ((force === true ? !UPLOADING : !rfBlocked_afterFetch()) && strip(d) !== strip(DATA)) render(d, true);
+    }
+  } catch (e) { NETFAIL = true; netBar(); }
+  RF_BUSY = false;
+  if (RF_AGAIN) { RF_AGAIN = false; silentRefresh(true); }
+}
+function rfBlocked_afterFetch() {
+  const a = document.activeElement;
+  return UPLOADING || document.hidden || document.querySelector('.ov') || (a && /TEXTAREA|INPUT|SELECT/.test(a.tagName));
+}
+setInterval(silentRefresh, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) silentRefresh(); });
+
 applyTheme();
 applyStatic();
 $('go').onclick = () => login(nd($('apt').value), nd($('pin').value));
@@ -762,7 +959,12 @@ if (q.get('apt') && q.get('pin')) {
 } else {
   try {
     const s = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (s && s.a && s.t) login(s.a, '', true, s.t);
+    if (s && s.a && s.t) {
+      const c = cacheLoad(s.a);
+      $('login').hidden = true; $('view').hidden = false;
+      if (c) { CUR = { a: s.a, t: s.t }; render(c); netBar(); silentRefresh(); }
+      else { $('view').innerHTML = '<div class="card"><div class="mut" style="text-align:center">' + t('جاري التحميل...') + '</div></div>'; login(s.a, '', true, s.t); }
+    }
     else if (s && s.a && s.p) login(s.a, s.p, true); // تخزين قديم: يدخل مرة ثم يُستبدل برمز جلسة بلا الرقم السري
   } catch (e) {}
 }

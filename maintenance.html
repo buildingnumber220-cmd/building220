@@ -289,6 +289,27 @@ try {
   if (old) localStorage.removeItem(OLDKEY); // الرمز القديم: يُستخدم مرة للدخول ثم يُمسح
   if (t) { TOK = t; load('', true); } else if (old) load(old, true);
 } catch (e) {}
+// تحديث تلقائي صامت: كل دقيقة، وفور الرجوع للصفحة. لا يمس الشاشة إلا لو المهام اتغيّرت فعلاً.
+let RF_BUSY = false;
+function rfBlocked() {
+  const a = document.activeElement;
+  return !TOK || RF_BUSY || document.hidden || document.querySelector('.ov') || $('view').hidden || (a && /TEXTAREA|INPUT|SELECT/.test(a.tagName));
+}
+async function silentRefresh() {
+  if (rfBlocked()) return;
+  RF_BUSY = true;
+  try {
+    const d = await api({ action: 'm_list' });
+    if (d && d.ok && !rfBlocked_afterFetch() && JSON.stringify(d.tasks) !== JSON.stringify(TASKS)) { TASKS = d.tasks; render(d); }
+  } catch (e) {}
+  RF_BUSY = false;
+}
+function rfBlocked_afterFetch() {
+  const a = document.activeElement;
+  return !TOK || document.hidden || document.querySelector('.ov') || (a && /TEXTAREA|INPUT|SELECT/.test(a.tagName));
+}
+setInterval(silentRefresh, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) silentRefresh(); });
 </script>
 </body>
 </html>

@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#16294d">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="أمين الصندوق">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="admin.webmanifest">
+<link rel="apple-touch-icon" href="admin-apple-touch-icon.png">
+<link rel="icon" type="image/png" href="admin-192.png">
 <title>إدارة عمارة 220</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -152,9 +158,12 @@ input.t{text-align:right;letter-spacing:0;font-size:16px}
 .ok-toast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#1f2a44;color:#fff;padding:12px 20px;border-radius:99px;font-weight:700;z-index:60;box-shadow:var(--sh);max-width:90vw;text-align:center}
 .sheet{max-height:92vh;overflow:auto}
 .pg{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);margin-top:8px}
+.netbar{position:fixed;top:0;inset-inline:0;z-index:70;padding:calc(6px + env(safe-area-inset-top,0px)) 12px 6px;text-align:center;font-size:13px;font-weight:700;background:var(--warnbg);color:var(--warn);border-bottom:1px solid var(--br)}
+.netbar[hidden]{display:none}
 </style>
 </head>
 <body>
+<div id="netbar" class="netbar" role="status" hidden></div>
 <header class="brand">
   <div class="emb"><svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true">
         <defs>
@@ -233,9 +242,9 @@ async function load(code, auto, silent) {
     } else {
       if (d.tok) { TOK = d.tok; try { localStorage.setItem(KEY, TOK); } catch (e) {} }
       CODE = '';
-      D = d; render();
+      D = d; render(); markFresh();
     }
-  } catch (e) { if (!silent) $('err').textContent = 'تعذر الاتصال، حاول مرة أخرى.'; }
+  } catch (e) { if (!silent) $('err').textContent = 'تعذر الاتصال، حاول مرة أخرى.'; NETFAIL = true; netBar(); }
   if (!silent) $('go').disabled = false;
 }
 const reload = () => load('', false, true);
@@ -247,7 +256,7 @@ function toggleRow(key, title, sub, on) {
 function render() {
   const d = D, sc = window.scrollY;
   $('login').hidden = true; $('view').hidden = false;
-  let h = '<div class="hi"><b>لوحة الإدارة</b><span><button id="rf">تحديث ↻</button><button id="out">خروج</button></span></div>';
+  let h = '<div class="hi"><b>لوحة الإدارة</b><span>' + (isStandalone() ? '' : '<button id="inst">📲 تثبيت</button>') + '<button id="rf">تحديث ↻</button><button id="out">خروج</button></span></div>';
 
   h += '<div class="hero ok"><div class="apt">رصيد صندوق الصيانة</div><div class="big">' + money(d.fund) + '</div><div class="sub">' + (d.show.fund ? 'ظاهر للسكان' : 'مخفي عن السكان') + '</div></div>';
 
@@ -351,6 +360,7 @@ function render() {
 
   $('out').onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} CODE = ''; TOK = ''; D = null; $('view').hidden = true; $('login').hidden = false; $('code').value = ''; };
   $('rf').onclick = () => { reload(); toast('تم التحديث'); };
+  const ib = $('inst'); if (ib) ib.onclick = installApp;
   $('addp').onclick = addProject;
   $('sadd').onclick = addSched;
   document.querySelectorAll('[data-sd]').forEach(b => b.onclick = async () => {
@@ -567,8 +577,43 @@ try {
   if (old) localStorage.removeItem(OLDKEY); // الرمز القديم المخزّن كما هو: يُستخدم مرة للدخول ثم يُمسح
   if (t) { TOK = t; load('', true); } else if (old) load(old, true);
 } catch (e) {}
+// ---------- شريط الاتصال + تثبيت كتطبيق ----------
+let LASTOK = 0, NETFAIL = false, INSTALL_EVT = null;
+function agoTxt(ms) {
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return 'الآن';
+  const h = Math.floor(m / 60), d = Math.floor(h / 24);
+  return 'منذ ' + (d ? d + (d === 1 ? ' يوم' : ' أيام') : h ? h + (h === 1 ? ' ساعة' : h === 2 ? ' ساعتين' : ' ساعات') : m + (m === 1 ? ' دقيقة' : m === 2 ? ' دقيقتين' : m <= 10 ? ' دقائق' : ' دقيقة'));
+}
+function netBar() {
+  const el = $('netbar'); if (!el) return;
+  const off = !navigator.onLine || NETFAIL;
+  if (!off || !D) { el.hidden = true; return; }
+  el.textContent = '⚠️ بدون اتصال' + (LASTOK ? ' · آخر تحديث ' + agoTxt(Date.now() - LASTOK) : '');
+  el.hidden = false;
+}
+function markFresh() { LASTOK = Date.now(); NETFAIL = false; netBar(); }
+window.addEventListener('offline', netBar);
+window.addEventListener('online', () => { netBar(); if (TOK) reload(); });
+setInterval(netBar, 30000);
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); INSTALL_EVT = e; });
+window.addEventListener('appinstalled', () => { INSTALL_EVT = null; });
+function isStandalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; }
+async function installApp() {
+  if (INSTALL_EVT) { const ev = INSTALL_EVT; INSTALL_EVT = null; try { ev.prompt(); await ev.userChoice; } catch (e) {} return; }
+  const ov = document.createElement('div');
+  ov.className = 'ov';
+  ov.innerHTML = '<div class="sheet"><h2>تثبيت التطبيق</h2><div class="mut" style="line-height:1.9">في آيفون: اضغط زر المشاركة ⬆️ في Safari، ثم «إضافة إلى الشاشة الرئيسية».<br><br>في أندرويد: اضغط ⋮ أعلى المتصفح، ثم «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».<br><br>بعد التثبيت قد تحتاج لإدخال الرمز مرة واحدة داخل التطبيق.</div><button class="btn" id="icx" style="margin-top:14px">حسناً</button></div>';
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  $('icx').onclick = close;
+  ov.onclick = e => { if (e.target === ov) close(); };
+}
+if ('serviceWorker' in navigator && location.protocol === 'https:') { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
+
 // تحديث تلقائي كل دقيقة لو لا توجد نافذة مفتوحة، فيظهر أي تعديل تم في الشيت
 setInterval(() => { if (TOK && !BUSY && !document.hidden && !document.querySelector('.ov') && !(document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName))) reload(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && TOK && !BUSY && !document.querySelector('.ov') && !(document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName))) reload(); });
 </script>
 </body>
 </html>
