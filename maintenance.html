@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#16294d">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="التنفيذ">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="maintenance.webmanifest">
+<link rel="apple-touch-icon" href="maint-apple-touch-icon.png">
+<link rel="icon" type="image/png" href="maint-192.png">
 <title>الإدارة والتنفيذ - عمارة 220</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -227,7 +233,7 @@ async function load(code, auto) {
 function render(d) {
   $('login').hidden = true; $('view').hidden = false;
   const today = new Date().toISOString().slice(0, 10);
-  let h = '<div class="hi"><b>أهلاً ' + esc(d.name || '') + '</b><span><button id="rf">تحديث ↻</button><button id="out">خروج</button></span></div>';
+  let h = '<div class="hi"><b>أهلاً ' + esc(d.name || '') + '</b><span>' + (isStandalone() ? '' : '<button id="inst">📲 تثبيت</button>') + '<button id="rf">تحديث ↻</button><button id="out">خروج</button></span></div>';
   if (!d.tasks.length) h += '<div class="card"><div class="mut" style="text-align:center">لا توجد مهام حالياً 🌸</div></div>';
   d.tasks.forEach((t, i) => {
     const late = t.due && t.due < today && t.status !== 'منتهية';
@@ -241,6 +247,7 @@ function render(d) {
   $('view').innerHTML = h;
   $('out').onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} CODE = ''; TOK = ''; $('view').hidden = true; $('login').hidden = false; $('code').value = ''; };
   $('rf').onclick = () => load('');
+  const ib = $('inst'); if (ib) ib.onclick = installApp;
   document.querySelectorAll('.upd').forEach(b => b.onclick = () => edit(TASKS[Number(b.dataset.i)]));
 }
 
@@ -310,6 +317,22 @@ function rfBlocked_afterFetch() {
 }
 setInterval(silentRefresh, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) silentRefresh(); });
+// ---------- تثبيت كتطبيق ----------
+let INSTALL_EVT = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); INSTALL_EVT = e; });
+window.addEventListener('appinstalled', () => { INSTALL_EVT = null; });
+function isStandalone() { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; }
+async function installApp() {
+  if (INSTALL_EVT) { const ev = INSTALL_EVT; INSTALL_EVT = null; try { ev.prompt(); await ev.userChoice; } catch (e) {} return; }
+  const ov = document.createElement('div');
+  ov.className = 'ov';
+  ov.innerHTML = '<div class="sheet"><h2>تثبيت التطبيق</h2><div class="mut" style="line-height:1.9">في آيفون: اضغط زر المشاركة ⬆️ في Safari، ثم «إضافة إلى الشاشة الرئيسية».<br><br>في أندرويد: اضغط ⋮ أعلى المتصفح، ثم «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».<br><br>بعد التثبيت قد تحتاج لإدخال الرمز مرة واحدة داخل التطبيق.</div><button class="btn" id="icx" style="margin-top:14px">حسناً</button></div>';
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  $('icx').onclick = close;
+  ov.onclick = e => { if (e.target === ov) close(); };
+}
+if ('serviceWorker' in navigator && location.protocol === 'https:') { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
 </script>
 </body>
 </html>

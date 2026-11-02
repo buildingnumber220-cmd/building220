@@ -1,0 +1,28 @@
+{
+  "id": "./maintenance.html",
+  "name": "إدارة وتنفيذ عمارة 220",
+  "short_name": "التنفيذ",
+  "description": "صفحة الإدارة والتنفيذ - عمارة 220 حي القرنفل",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./maintenance.html",
+  "scope": "./maintenance.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#16294d",
+  "theme_color": "#16294d",
+  "icons": [
+    {
+      "src": "maint-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "maint-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
