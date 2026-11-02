@@ -276,6 +276,7 @@ const EN = {
   'رقم الشقة': 'Apartment number', 'الرقم السري': 'PIN', 'دخول': 'Sign in',
   'تم قفل الشقة مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.': 'This apartment is temporarily locked after failed attempts. Try again in an hour.',
   'انتهت الجلسة، اكتب الرقم السري من جديد.': 'Session expired. Enter your PIN again.',
+  'هذا الجهاز غير مسموح له بفتح هذه الشقة. تواصل مع أمين الصندوق.': 'This device is not allowed to open this apartment. Contact the treasurer.',
   'رقم الشقة أو الرقم السري غير صحيح.': 'Apartment number or PIN is incorrect.',
   'تعذر الاتصال، حاول مرة أخرى.': 'Could not connect. Please try again.',
   'المبلغ غير صحيح أو أكبر من المتبقي.': 'Invalid amount, or more than the remaining balance.',
@@ -393,9 +394,10 @@ async function login(apt, pin, auto, tok) {
     const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'check', apt: apt, pin: pin || '', tok: tok || '', did: DID }) });
     const d = await r.json();
     if (!d.ok) {
-      if (d.error === 'expired' || (auto && d.error === 'bad')) clear();
+      if (d.error === 'expired' || d.error === 'blocked' || (auto && d.error === 'bad')) clear();
       $('err').textContent = d.error === 'locked'
         ? t('تم قفل الشقة مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.')
+        : d.error === 'blocked' ? t('هذا الجهاز غير مسموح له بفتح هذه الشقة. تواصل مع أمين الصندوق.')
         : d.error === 'expired' ? t('انتهت الجلسة، اكتب الرقم السري من جديد.')
         : t('رقم الشقة أو الرقم السري غير صحيح.');
       if (auto) showLogin();
@@ -925,7 +927,7 @@ async function silentRefresh(force) {
     const r = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'check', apt: CUR.a, pin: '', tok: CUR.t, did: DID }) });
     const d = await r.json();
     // نتجاهل أي فشل أو رد متأخر، ولا نعمل تحديث لو المستخدم بدأ يكتب أو فتح نافذة أثناء الانتظار
-    if (d && !d.ok && (d.error === 'expired' || d.error === 'bad') && CUR && who === CUR.a + '|' + CUR.t) {
+    if (d && !d.ok && (d.error === 'expired' || d.error === 'bad' || d.error === 'blocked') && CUR && who === CUR.a + '|' + CUR.t) {
       clear(); showLogin();
       $('err').textContent = t('انتهت الجلسة، اكتب الرقم السري من جديد.');
     } else if (d && d.ok && CUR && who === CUR.a + '|' + CUR.t) {
