@@ -201,6 +201,17 @@ a.vw{color:var(--ac);font-weight:800;text-decoration:underline;cursor:pointer;ma
 .seg button.on{background:var(--card);color:var(--ac);box-shadow:0 1px 6px rgba(0,0,0,.14)}
 .mi{display:flex;align-items:center;gap:10px;width:100%;padding:12px 4px;background:none;border:0;color:var(--tx);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;text-align:start}
 .mi.danger{color:var(--bad)}
+.pwr{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:3px;padding:18px 0 4px;background:none;border:0;cursor:pointer;color:var(--mut);opacity:.5;transition:opacity .2s;width:100%}
+.pwr:hover,.pwr:active{opacity:.9}
+.pwr .p1{display:flex;align-items:center;gap:8px;font-family:'Tajawal',sans-serif;font-size:9px;letter-spacing:.32em;text-transform:uppercase;font-weight:500}
+.pwr .p1::before,.pwr .p1::after{content:"";width:22px;height:1px;background:linear-gradient(90deg,transparent,currentColor)}
+.pwr .p1::after{background:linear-gradient(270deg,transparent,currentColor)}
+.pwr .p2{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:17px;letter-spacing:.06em;background:linear-gradient(90deg,var(--rose),var(--ac));-webkit-background-clip:text;background-clip:text;color:transparent}
+.pwr .p2 i{font-style:normal;font-size:9px;vertical-align:middle;margin:0 3px;color:var(--rose);-webkit-text-fill-color:var(--rose)}
+.cxs{display:flex;gap:10px;margin-top:14px}
+.cxs a{flex:1;text-align:center;padding:13px 6px;border-radius:14px;color:#fff;text-decoration:none;font-weight:800;font-size:15px}
+.cxs a.wa2{background:linear-gradient(135deg,#128c7e,#25d366)}
+.cxs a.tg2{background:linear-gradient(135deg,#1c7fc4,#2aabee)}
 .cbox{margin-top:6px;background:var(--bg);border-radius:14px;padding:12px}
 .cbox p{margin:0 0 10px;font-size:14px;line-height:1.8}
 .cbox .cr{display:flex;gap:8px}
@@ -242,7 +253,7 @@ a.vw{color:var(--ac);font-weight:800;text-decoration:underline;cursor:pointer;ma
     <h2 data-t>تسجيل الدخول</h2>
     <div class="mut" data-t>ادخل بيانات شقتك لمتابعة مساهماتك</div>
     <div class="field"><label data-t>رقم الشقة</label><input id="apt" inputmode="numeric" autocomplete="off"></div>
-    <div class="field"><label data-t>الرقم السري</label><input id="pin" type="password" inputmode="numeric" autocomplete="off"></div>
+    <div class="field"><label data-t>الرقم السري</label><input id="pin" type="password" autocomplete="off"></div>
     <button id="go" class="btn" data-t>دخول</button>
     <div id="err" class="err"></div>
     <button class="out" id="ll" type="button">English</button>
@@ -261,7 +272,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzVJd0ogGGgehVNkPVuZyJW
 
 // بيانات التواصل مع المنشئ (القايمة الجانبية). اتركهم فاضيين لإخفاء الزر.
 // يوزر واتساب وتليجرام بدون @
-const CREATOR = { name: 'H.khaled', wa: 'H.khaled369', tg: 'Hkhaled369' };
+const CREATOR = { name: 'H.khaled', wa: '201027950486', tg: 'Hkhaled369' };
 
 const $ = id => document.getElementById(id);
 const nd = s => String(s).replace(/[٠-٩]/g, c => c.charCodeAt(0) - 1632).replace(/[۰-۹]/g, c => c.charCodeAt(0) - 1776).trim();
@@ -306,8 +317,8 @@ const EN = {
   'مساهماتك': 'Your contributions', 'عرض كل الدفعات': 'Show all payments', 'مصروفات الصيانة': 'Maintenance expenses', 'مصروفات المشروع': 'Project expenses', 'الإجمالي': 'Total', 'عرض كل المصروفات': 'Show all expenses',
   'رصيد صندوق الصيانة': 'Maintenance fund balance', 'صندوق المشروع': 'Project fund', 'فائض': 'Surplus', 'رصيد المشروع الان': 'Current project balance',
   'تسجيل الخروج': 'Log out', 'القائمة': 'Menu', 'الوضع': 'Appearance', 'تلقائي': 'Auto', 'فاتح': 'Light', 'داكن': 'Dark', 'اللغة': 'Language',
-  'تواصل مع المنشئ': 'Contact the creator', 'إغلاق': 'Close', '💬 واتساب': '💬 WhatsApp', '✈️ تليجرام': '✈️ Telegram',
-  'هل تريد نظاماً مثل هذا لعمارتك أو نشاطك؟ يسعدني التواصل معك.': 'Want a system like this for your building or business? I would be glad to hear from you.',
+  'تواصل مع مطور السيستم': 'Contact the system developer', 'إغلاق': 'Close', 'واتساب': 'WhatsApp', 'تليجرام': 'Telegram',
+  'يسعدني التواصل': 'Happy to hear from you',
   'للبيع': 'For sale', 'أقدّم خدمة': 'Offering a service', 'أطلب خدمة': 'Looking for a service',
   'أضف إعلان': 'Post an ad', 'إعلاناتي': 'My ads', 'نوع الإعلان': 'Ad type', 'نص الإعلان': 'Ad text',
   'مثال: يوجد سلم ألومنيوم زيادة لو حد محتاجه': 'Example: I have an extra bag of cement for 250 EGP if anyone needs it',
@@ -356,11 +367,13 @@ function setTheme(v) {
 
 const KEY = 'bf_login';
 // نخزّن رمز جلسة موقّع من السيرفر (ينتهي ويبطل لو اتغيّر الرقم السري) بدل الرقم السري نفسه
-const save = (a, t) => { try { localStorage.setItem(KEY, JSON.stringify({ a, t })); } catch (e) {} };
+let ADMVIEW = false;
+const save = (a, t) => { if (ADMVIEW) return; try { localStorage.setItem(KEY, JSON.stringify({ a, t })); } catch (e) {} };
 const CKEY = 'bf_cache';
-const clear = () => { try { localStorage.removeItem(KEY); localStorage.removeItem(CKEY); } catch (e) {} };
+const clear = () => { if (ADMVIEW) return; try { localStorage.removeItem(KEY); localStorage.removeItem(CKEY); } catch (e) {} };
 // آخر بيانات اتعرضت للشقة (بدون الرقم السري ولا الرمز) عشان الصفحة تفتح فوراً وتتحدّث في الخلفية
 function cacheSave(d) {
+  if (ADMVIEW) return;
   try { if (!CUR || (d.items || []).some(i => i.uploading)) return; const c = Object.assign({}, d); delete c.tok; localStorage.setItem(CKEY, JSON.stringify({ a: CUR.a, d: c })); } catch (e) {}
 }
 function cacheLoad(a) {
@@ -402,7 +415,7 @@ async function login(apt, pin, auto, tok) {
         : d.error === 'expired' ? t('انتهت الجلسة، اكتب الرقم السري من جديد.')
         : t('رقم الشقة أو الرقم السري غير صحيح.');
       if (auto) showLogin();
-    } else { save(apt, d.tok); CUR = { a: apt, t: d.tok }; render(d); markFresh(); }
+    } else { if (d.adm) ADMVIEW = true; save(apt, d.tok); CUR = { a: apt, t: d.tok }; render(d); markFresh(); }
   } catch (e) {
     $('err').textContent = t('تعذر الاتصال، حاول مرة أخرى.');
     if (auto) showLogin();
@@ -623,25 +636,34 @@ async function installApp() {
 function trackContact(ch) {
   try { fetch(API_URL, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'contact_click', ch: ch, apt: CUR ? CUR.a : '', tok: CUR ? CUR.t : '', did: DID, ua: (navigator.userAgent || '').slice(0, 160) }) }).catch(() => {}); } catch (e) {}
 }
+const WA_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" style="vertical-align:-3px;margin-inline-end:6px"><path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35zM12.05 21.8h-.01a9.87 9.87 0 0 1-5.03-1.38l-.36-.21-3.74.98 1-3.65-.24-.37a9.86 9.86 0 0 1-1.51-5.26c0-5.45 4.44-9.88 9.9-9.88 2.64 0 5.12 1.03 6.99 2.9a9.82 9.82 0 0 1 2.89 6.99c0 5.45-4.44 9.88-9.89 9.88zM20.05 3.93A11.8 11.8 0 0 0 12.05.5C5.5.5.16 5.83.16 12.39c0 2.1.55 4.14 1.59 5.95L.06 24l6.3-1.65a11.88 11.88 0 0 0 5.69 1.45h.01c6.55 0 11.89-5.33 11.89-11.89 0-3.18-1.24-6.16-3.5-8.43z"/></svg>', TG_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" style="vertical-align:-3px;margin-inline-end:6px"><path d="M11.94 24A12 12 0 1 0 11.94 0a12 12 0 0 0 0 24zm5.57-17.54c.2-.01.64.04.93.27.24.2.3.46.34.65.03.19.07.6.04.93-.35 3.7-1.87 7.2-2.64 9.42-.33.94-.97 1.25-1.6 1.28-1.36.12-2.4-.9-3.72-1.77-2.06-1.35-3.22-2.2-5.22-3.52-2.31-1.52-.81-2.36.5-3.73.34-.36 6.3-5.78 6.42-6.27.01-.06.03-.29-.11-.41-.13-.12-.33-.08-.47-.05-.2.04-3.39 2.15-9.58 6.33-.9.62-1.72.92-2.45.9-.8-.02-2.35-.45-3.5-.83-1.41-.46-2.53-.7-2.43-1.48.05-.41.61-.83 1.68-1.26 6.57-2.86 10.95-4.75 13.14-5.66 6.26-2.6 7.56-3.05 8.4-3.07z"/></svg>';
+function contactSheet() {
+  closeMenu();
+  const waText = LANG === 'en' ? 'Hello, I saw the Building 220 system and would like to know more.' : 'السلام عليكم، شفت نظام عمارة 220 وعايز أعرف أكتر.';
+  const ov = document.createElement('div');
+  ov.className = 'ov';
+  ov.innerHTML = '<div class="sheet"><h2>' + t('تواصل مع مطور السيستم') + '</h2><div class="mut" style="line-height:1.9">' + t('يسعدني التواصل') + '</div>' +
+    '<div class="cxs">' + (CREATOR.wa ? '<a class="wa2" data-ch="wa" target="_blank" rel="noopener" href="https://wa.me/' + esc(CREATOR.wa) + '?text=' + encodeURIComponent(waText) + '">' + WA_SVG + t('واتساب') + '</a>' : '') +
+    (CREATOR.tg ? '<a class="tg2" data-ch="tg" target="_blank" rel="noopener" href="https://t.me/' + esc(CREATOR.tg) + '">' + TG_SVG + t('تليجرام') + '</a>' : '') + '</div>' +
+    '<button class="btn" id="cxx" style="margin-top:14px">' + t('إغلاق') + '</button></div>';
+  document.body.appendChild(ov);
+  ov.querySelectorAll('a[data-ch]').forEach(a => a.addEventListener('click', () => trackContact(a.dataset.ch)));
+  const close = () => ov.remove();
+  $('cxx').onclick = close;
+  ov.onclick = e => { if (e.target === ov) close(); };
+}
 function buildMenu() {
   const hasC = CREATOR.wa || CREATOR.tg;
   const seg = (name, cur, opts) => '<div class="seg">' + opts.map(o => '<button data-' + name + '="' + o[0] + '" class="' + (cur === o[0] ? 'on' : '') + '">' + o[1] + '</button>').join('') + '</div>';
-  const waText = LANG === 'en' ? 'Hello, I saw the Building 220 system and would like to know more.' : 'السلام عليكم، شفت نظام عمارة 220 وعايز أعرف أكتر.';
   let h = '<div class="dh"><div><b>' + t('القائمة') + '</b>' + (DATA ? '<div class="mut">' + t('شقة') + ' ' + esc(DATA.apt) + '</div>' : '') + '</div><button class="x" id="mx" aria-label="' + t('إغلاق') + '">✕</button></div>';
   h += '<div class="ms"><div class="ml">🌓 ' + t('الوضع') + '</div>' + seg('theme', THEME, [['auto', t('تلقائي')], ['light', t('فاتح')], ['dark', t('داكن')]]) + '</div>';
   h += '<div class="ms"><div class="ml">🌐 ' + t('اللغة') + '</div>' + seg('lang', LANG, [['ar', 'العربية'], ['en', 'English']]) + '</div>';
   const mineN = ((DATA && DATA.myAds) || []).filter(a => a.status === 'pending' || a.status === 'published').length;
   const liveN = ((DATA && DATA.ads) || []).length;
   h += '<div class="ms"><button class="mi" id="mmkt">🏪 ' + t('سوق العمارة') + (liveN ? ' (' + liveN + ')' : '') + '</button><button class="mi" id="madd">➕ ' + t('أضف إعلان') + '</button><button class="mi" id="mmine">📣 ' + t('إعلاناتي') + (mineN ? ' (' + mineN + ')' : '') + '</button></div>';
-  if (hasC) {
-    h += '<div class="ms"><button class="mi" id="cbtn">💬 ' + t('تواصل مع المنشئ') + '</button><div class="cbox" id="cbox" hidden>' +
-      '<p>' + t('هل تريد نظاماً مثل هذا لعمارتك أو نشاطك؟ يسعدني التواصل معك.') + '</p><div class="cr">' +
-      (CREATOR.wa ? '<a class="wa" data-ch="wa" target="_blank" rel="noopener" href="https://wa.me/@' + esc(CREATOR.wa) + '?text=' + encodeURIComponent(waText) + '">' + t('💬 واتساب') + '</a>' : '') +
-      (CREATOR.tg ? '<a class="tg" data-ch="tg" target="_blank" rel="noopener" href="https://t.me/' + esc(CREATOR.tg) + '">' + t('✈️ تليجرام') + '</a>' : '') +
-      '</div></div></div>';
-  }
   if (!isStandalone()) h += '<div class="ms"><button class="mi" id="minst">📲 ' + t('تثبيت كتطبيق') + '</button></div>';
   h += '<button class="mi danger" id="mout">🚪 ' + t('تسجيل الخروج') + '</button>';
+  if (hasC) h += '<button class="pwr" id="pwr" aria-label="Powered by H.khaled"><span class="p1">Powered by</span><span class="p2"><i>✦</i>H. Khaled<i>✦</i></span></button>';
   $('drawer').innerHTML = h;
   $('mx').onclick = closeMenu;
   $('mout').onclick = doLogout;
@@ -651,8 +673,7 @@ function buildMenu() {
   $('mmkt').onclick = () => { closeMenu(); openMarket(); };
   $('madd').onclick = () => { closeMenu(); openAdForm(); };
   $('mmine').onclick = () => { closeMenu(); openMyAds(); };
-  const cb = $('cbtn'); if (cb) cb.onclick = () => { const x = $('cbox'); x.hidden = !x.hidden; };
-  document.querySelectorAll('#drawer a[data-ch]').forEach(a => a.addEventListener('click', () => trackContact(a.dataset.ch)));
+  const pw = $('pwr'); if (pw) pw.onclick = contactSheet;
 }
 $('mbtn').onclick = openMenu;
 $('mov').onclick = closeMenu;
@@ -792,7 +813,7 @@ function render(d, keepScroll) {
   h += '</div>';
 
   const pm = s.pay || [];
-  if (pm.length || s.pay_info || s.treasurer_phone) {
+  if ((pm.length || s.pay_info || s.treasurer_phone) && d.items.some(i => i.remaining > 0)) {
     h += '<div class="card"><h2>' + t('طريقة المساهمة') + '</h2>';
     if (s.treasurer_name) h += '<div class="mut" style="margin-bottom:10px">' + t('أمين الصندوق') + ': ' + esc(s.treasurer_name) + '</div>';
     pm.forEach((p, n) => {
@@ -959,7 +980,13 @@ $('go').onclick = () => login(nd($('apt').value), nd($('pin').value));
 $('pin').addEventListener('keydown', e => { if (e.key === 'Enter') $('go').click(); });
 
 const q = new URLSearchParams(location.search);
-if (q.get('apt') && q.get('pin')) {
+if (q.get('apt') && q.get('adm')) {
+  const qa = q.get('apt'), qt = q.get('adm');
+  ADMVIEW = true;
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  $('login').hidden = true; $('view').hidden = false;
+  login(qa, '', true, qt);
+} else if (q.get('apt') && q.get('pin')) {
   const qa = q.get('apt'), qp = q.get('pin');
   try { history.replaceState(null, '', location.pathname); } catch (e) {} // لا يبقى الرقم السري في شريط العنوان/السجل
   login(qa, qp);
