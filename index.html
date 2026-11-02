@@ -206,6 +206,7 @@ a.vw{color:var(--ac);font-weight:800;text-decoration:underline;cursor:pointer;ma
 .cbox .cr{display:flex;gap:8px}
 .cbox a{flex:1;text-align:center;padding:10px 6px;border-radius:12px;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;text-decoration:none;font-weight:700;font-size:14px}
 .cbox a.wa{background:linear-gradient(135deg,#128c7e,#25d366)}
+.cbox a.tg{background:linear-gradient(135deg,#1c7fc4,#2aabee)}
 [hidden]{display:none!important}
 .netbar{position:fixed;top:0;inset-inline:0;z-index:70;padding:calc(6px + env(safe-area-inset-top,0px)) 12px 6px;text-align:center;font-size:13px;font-weight:700;background:var(--warnbg);color:var(--warn);border-bottom:1px solid var(--br)}
 .netbar[hidden]{display:none}
@@ -259,8 +260,8 @@ a.vw{color:var(--ac);font-weight:800;text-decoration:underline;cursor:pointer;ma
 const API_URL = "https://script.google.com/macros/s/AKfycbzVJd0ogGGgehVNkPVuZyJWbjZeX5MBpkNNziDPv-8HN4LTYCX5gZtcjEKVbggRmDIQ6g/exec";
 
 // بيانات التواصل مع المنشئ (القايمة الجانبية). اتركهم فاضيين لإخفاء الزر.
-// phone بصيغة دولية بدون + (مثال 201012345678)
-const CREATOR = { name: 'حسام', phone: '', email: '' };
+// يوزر واتساب وتليجرام بدون @
+const CREATOR = { name: 'H.khaled', wa: 'H.khaled369', tg: 'Hkhaled369' };
 
 const $ = id => document.getElementById(id);
 const nd = s => String(s).replace(/[٠-٩]/g, c => c.charCodeAt(0) - 1632).replace(/[۰-۹]/g, c => c.charCodeAt(0) - 1776).trim();
@@ -305,7 +306,7 @@ const EN = {
   'مساهماتك': 'Your contributions', 'عرض كل الدفعات': 'Show all payments', 'مصروفات الصيانة': 'Maintenance expenses', 'مصروفات المشروع': 'Project expenses', 'الإجمالي': 'Total', 'عرض كل المصروفات': 'Show all expenses',
   'رصيد صندوق الصيانة': 'Maintenance fund balance', 'صندوق المشروع': 'Project fund', 'فائض': 'Surplus', 'رصيد المشروع الان': 'Current project balance',
   'تسجيل الخروج': 'Log out', 'القائمة': 'Menu', 'الوضع': 'Appearance', 'تلقائي': 'Auto', 'فاتح': 'Light', 'داكن': 'Dark', 'اللغة': 'Language',
-  'تواصل مع المنشئ': 'Contact the creator', 'إغلاق': 'Close', '💬 واتساب': '💬 WhatsApp', '✉️ إيميل': '✉️ Email',
+  'تواصل مع المنشئ': 'Contact the creator', 'إغلاق': 'Close', '💬 واتساب': '💬 WhatsApp', '✈️ تليجرام': '✈️ Telegram',
   'هل تريد نظاماً مثل هذا لعمارتك أو نشاطك؟ يسعدني التواصل معك.': 'Want a system like this for your building or business? I would be glad to hear from you.',
   'للبيع': 'For sale', 'أقدّم خدمة': 'Offering a service', 'أطلب خدمة': 'Looking for a service',
   'أضف إعلان': 'Post an ad', 'إعلاناتي': 'My ads', 'نوع الإعلان': 'Ad type', 'نص الإعلان': 'Ad text',
@@ -619,8 +620,11 @@ async function installApp() {
   $('icx').onclick = close;
   ov.onclick = e => { if (e.target === ov) close(); };
 }
+function trackContact(ch) {
+  try { fetch(API_URL, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'contact_click', ch: ch, apt: CUR ? CUR.a : '', tok: CUR ? CUR.t : '', did: DID, ua: (navigator.userAgent || '').slice(0, 160) }) }).catch(() => {}); } catch (e) {}
+}
 function buildMenu() {
-  const hasC = CREATOR.phone || CREATOR.email;
+  const hasC = CREATOR.wa || CREATOR.tg;
   const seg = (name, cur, opts) => '<div class="seg">' + opts.map(o => '<button data-' + name + '="' + o[0] + '" class="' + (cur === o[0] ? 'on' : '') + '">' + o[1] + '</button>').join('') + '</div>';
   const waText = LANG === 'en' ? 'Hello, I saw the Building 220 system and would like to know more.' : 'السلام عليكم، شفت نظام عمارة 220 وعايز أعرف أكتر.';
   let h = '<div class="dh"><div><b>' + t('القائمة') + '</b>' + (DATA ? '<div class="mut">' + t('شقة') + ' ' + esc(DATA.apt) + '</div>' : '') + '</div><button class="x" id="mx" aria-label="' + t('إغلاق') + '">✕</button></div>';
@@ -632,8 +636,8 @@ function buildMenu() {
   if (hasC) {
     h += '<div class="ms"><button class="mi" id="cbtn">💬 ' + t('تواصل مع المنشئ') + '</button><div class="cbox" id="cbox" hidden>' +
       '<p>' + t('هل تريد نظاماً مثل هذا لعمارتك أو نشاطك؟ يسعدني التواصل معك.') + '</p><div class="cr">' +
-      (CREATOR.phone ? '<a class="wa" target="_blank" rel="noopener" href="' + waLink(CREATOR.phone, waText) + '">' + t('💬 واتساب') + '</a>' : '') +
-      (CREATOR.email ? '<a href="mailto:' + esc(CREATOR.email) + '">' + t('✉️ إيميل') + '</a>' : '') +
+      (CREATOR.wa ? '<a class="wa" data-ch="wa" target="_blank" rel="noopener" href="https://wa.me/@' + esc(CREATOR.wa) + '?text=' + encodeURIComponent(waText) + '">' + t('💬 واتساب') + '</a>' : '') +
+      (CREATOR.tg ? '<a class="tg" data-ch="tg" target="_blank" rel="noopener" href="https://t.me/' + esc(CREATOR.tg) + '">' + t('✈️ تليجرام') + '</a>' : '') +
       '</div></div></div>';
   }
   if (!isStandalone()) h += '<div class="ms"><button class="mi" id="minst">📲 ' + t('تثبيت كتطبيق') + '</button></div>';
@@ -648,6 +652,7 @@ function buildMenu() {
   $('madd').onclick = () => { closeMenu(); openAdForm(); };
   $('mmine').onclick = () => { closeMenu(); openMyAds(); };
   const cb = $('cbtn'); if (cb) cb.onclick = () => { const x = $('cbox'); x.hidden = !x.hidden; };
+  document.querySelectorAll('#drawer a[data-ch]').forEach(a => a.addEventListener('click', () => trackContact(a.dataset.ch)));
 }
 $('mbtn').onclick = openMenu;
 $('mov').onclick = closeMenu;

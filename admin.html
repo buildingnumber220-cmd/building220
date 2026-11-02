@@ -15,17 +15,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Noto+Kufi+Arabic:wght@500;600;700&display=swap" rel="stylesheet">
+<script>
+try { var _th = localStorage.getItem('bf_theme'); if (_th === 'light' || _th === 'dark') document.documentElement.setAttribute('data-theme', _th); } catch (e) {}
+</script>
 <style>
 :root{
   --bg:#f6f4f8;--card:#ffffff;--tx:#1a1f33;--mut:#6e7388;--br:#ece8ef;
   --ac:#243f7b;--ac2:#3d63b8;--rose:#d6457a;--rose2:#ff8db0;--ok:#12a150;--okbg:#e6f6ed;--bad:#d93a3a;--badbg:#fdeaea;--warn:#b7791f;--warnbg:#fff5e0;
   --sh:0 8px 28px rgba(22,41,77,.09);
 }
-@media(prefers-color-scheme:dark){:root{
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0e1220;--card:#171d30;--tx:#eef1fa;--mut:#9aa3ba;--br:#262e47;
   --ac:#7da2ff;--ac2:#a3bcff;--rose:#ff7aa8;--rose2:#ffb3cb;--ok:#4cd08a;--okbg:#12301f;--bad:#ff7b7b;--badbg:#341a1d;--warn:#f1c05a;--warnbg:#352a12;
   --sh:0 6px 24px rgba(0,0,0,.35);
 }}
+:root[data-theme="dark"]{
+  --bg:#0e1220;--card:#171d30;--tx:#eef1fa;--mut:#9aa3ba;--br:#262e47;
+  --ac:#7da2ff;--ac2:#a3bcff;--rose:#ff7aa8;--rose2:#ffb3cb;--ok:#4cd08a;--okbg:#12301f;--bad:#ff7b7b;--badbg:#341a1d;--warn:#f1c05a;--warnbg:#352a12;
+  --sh:0 6px 24px rgba(0,0,0,.35);
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
 body{background:var(--bg);color:var(--tx);font-family:'Tajawal',Tahoma,Arial,sans-serif;
@@ -167,10 +175,55 @@ input.t{text-align:right;letter-spacing:0;font-size:16px}
 .seg button{border:0;background:transparent;color:inherit;opacity:.55;padding:9px 14px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer}
 .seg button+button{border-inline-start:1.5px solid var(--br)}
 .seg button.on-ok{background:var(--ok);color:#fff;opacity:1}.seg button.on-bad{background:var(--bad);color:#fff;opacity:1}.seg button.on-off{background:var(--mut);color:#fff;opacity:1}
+
+
+/* sections */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px}
+.tile{border:1px solid var(--br);background:var(--card);border-radius:16px;padding:10px 2px;text-align:center;font-family:inherit;color:var(--tx);cursor:pointer;box-shadow:var(--sh)}
+.tile b{display:block;font-size:20px;line-height:1.3}.tile span{font-size:11px;color:var(--mut);font-weight:700}
+.tile.hot{border-color:var(--bad);background:var(--badbg)}.tile.hot b{color:var(--bad)}
+details.sec{background:var(--card);border:1px solid var(--br);border-radius:18px;margin-bottom:10px;box-shadow:var(--sh);overflow:hidden}
+details.sec.alert{border:2px solid var(--bad)}
+details.sec>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:15px 16px;cursor:pointer;font-weight:800;font-size:16px}
+details.sec>summary::-webkit-details-marker{display:none}
+.sec .si{font-size:20px;line-height:1}.sec .st{flex:1}
+.sec .bd{min-width:24px;padding:2px 8px;border-radius:99px;background:var(--ac);color:#fff;font-size:13px;text-align:center}
+.sec .bd.hot{background:var(--bad)}
+.sec .chev{width:9px;height:9px;border-inline-end:2px solid var(--mut);border-bottom:2px solid var(--mut);transform:rotate(45deg);transition:transform .2s;margin-inline-start:4px;margin-top:-3px}
+details.sec[open]>summary .chev{transform:rotate(-135deg);margin-top:3px}
+details.sec[open]>summary{border-bottom:1px solid var(--br)}
+details.sec>.sbd{padding:14px 16px}
+/* side menu */
+.dwbtn{position:fixed;top:max(12px,env(safe-area-inset-top));inset-inline-start:12px;z-index:40;width:44px;height:44px;border-radius:14px;border:1px solid var(--br);background:var(--card);color:var(--tx);box-shadow:var(--sh);font-size:21px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.dwov{position:fixed;inset:0;background:rgba(10,14,30,.55);z-index:60}
+.drawer{position:fixed;top:0;bottom:0;inset-inline-start:0;width:min(86vw,320px);background:var(--card);z-index:61;box-shadow:var(--sh);padding:max(18px,env(safe-area-inset-top)) 18px max(18px,env(safe-area-inset-bottom));overflow-y:auto;transition:transform .28s ease;display:flex;flex-direction:column;gap:6px;transform:translateX(105%)}
+.drawer.open{transform:none}
+.dwh{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--br);margin-bottom:6px}
+.dwh b{font-family:'Noto Kufi Arabic','Tajawal',sans-serif;font-size:18px}
+.dwh .x{background:none;border:0;color:var(--mut);font-size:22px;cursor:pointer;padding:4px 8px;font-family:inherit}
+.dws{padding:12px 0;border-bottom:1px solid var(--br)}
+.dwl{font-size:13px;color:var(--mut);font-weight:700;margin-bottom:8px}
+.tseg{display:flex;gap:6px;background:var(--bg);border-radius:12px;padding:4px}
+.tseg button{flex:1;padding:9px 6px;border:0;border-radius:9px;background:transparent;color:var(--tx);font-family:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.tseg button.on{background:var(--card);color:var(--ac);box-shadow:0 1px 6px rgba(0,0,0,.14)}
+.dwi{display:flex;align-items:center;gap:10px;width:100%;padding:12px 4px;background:none;border:0;color:var(--tx);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer;text-align:start}
+.dwi.danger{color:var(--bad)}
+.pwr{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:3px;padding:18px 0 4px;background:none;border:0;cursor:pointer;color:var(--mut);opacity:.5;transition:opacity .2s}
+.pwr:hover,.pwr:active{opacity:.9}
+.pwr .p1{display:flex;align-items:center;gap:8px;font-family:'Tajawal',sans-serif;font-size:9px;letter-spacing:.32em;text-transform:uppercase;font-weight:500}
+.pwr .p1::before,.pwr .p1::after{content:"";width:22px;height:1px;background:linear-gradient(90deg,transparent,currentColor)}
+.pwr .p1::after{background:linear-gradient(270deg,transparent,currentColor)}
+.pwr .p2{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:17px;letter-spacing:.06em;background:linear-gradient(90deg,var(--rose),var(--ac));-webkit-background-clip:text;background-clip:text;color:transparent}
+.pwr .p2 i{font-style:normal;font-size:9px;vertical-align:middle;margin:0 3px;color:var(--rose);-webkit-text-fill-color:var(--rose)}
+.cxs{display:flex;gap:10px;margin-top:14px}
+.cxs a{flex:1;text-align:center;padding:13px 6px;border-radius:14px;color:#fff;text-decoration:none;font-weight:800;font-size:15px}
+.cxs a.wa2{background:linear-gradient(135deg,#128c7e,#25d366)}
+.cxs a.tg2{background:linear-gradient(135deg,#1c7fc4,#2aabee)}
 </style>
 </head>
 <body>
 <div id="netbar" class="netbar" role="status" hidden></div>
+<button id="dwbtn" class="dwbtn" aria-label="القائمة" hidden>☰</button>
 <header class="brand">
   <div class="emb"><svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true">
         <defs>
@@ -198,6 +251,9 @@ input.t{text-align:right;letter-spacing:0;font-size:16px}
   <div id="view" hidden></div>
   <footer>🌸 عمارة 220 · حي القرنفل</footer>
 </div>
+
+<div id="dwov" class="dwov" hidden></div>
+<aside id="drawer" class="drawer" aria-hidden="true"></aside>
 
 <script>
 // ضع هنا نفس رابط الـ Web App المستخدم في index.html
@@ -260,16 +316,30 @@ function toggleRow(key, title, sub, on) {
   return '<div class="tg"><div><div class="tt">' + title + '</div><div class="ts">' + sub + '</div></div><button class="sw' + (on ? ' on' : '') + '" data-k="' + key + '"></button></div>';
 }
 
+// ---------- أقسام قابلة للطي ----------
+let OPEN = {};
+try { OPEN = JSON.parse(localStorage.getItem('bf_open') || '{}') || {}; } catch (e) {}
+const HOT = { claims: 1, ads: 1, dev: 1 };
+function sec(k, ic, title, n, body, defOpen, alert) {
+  const op = (k in OPEN) ? OPEN[k] : defOpen;
+  return '<details class="sec' + (alert ? ' alert' : '') + '" data-sec="' + k + '"' + (op ? ' open' : '') + '><summary><span class="si">' + ic + '</span><span class="st">' + title + '</span>' +
+    (n ? '<span class="bd' + (HOT[k] ? ' hot' : '') + '">' + n + '</span>' : '') + '<span class="chev"></span></summary><div class="sbd">' + body + '</div></details>';
+}
+function openSec(k) {
+  const el = document.querySelector('details[data-sec="' + k + '"]'); if (!el) return;
+  el.open = true; OPEN[k] = true; try { localStorage.setItem('bf_open', JSON.stringify(OPEN)); } catch (e) {}
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function render() {
   const d = D, sc = window.scrollY;
-  $('login').hidden = true; $('view').hidden = false;
-  let h = '<div class="hi"><b>لوحة الإدارة</b><span>' + (isStandalone() ? '' : '<button id="inst">📲 تثبيت</button>') + '<button id="rf">تحديث ↻</button><button id="out">خروج</button></span></div>';
+  $('login').hidden = true; $('view').hidden = false; DW.sub = 'لوحة أمين الصندوق'; dwShow(true);
+  let h = '<div class="hi"><b>لوحة الإدارة</b></div>';
+  let H0 = ''; const SC = {};
 
   h += '<div class="hero ok"><div class="apt">رصيد صندوق الصيانة</div><div class="big">' + money(d.fund) + '</div><div class="sub">' + (d.show.fund ? 'ظاهر للسكان' : 'مخفي عن السكان') + '</div></div>';
 
-  h += '<button class="addp" id="addp">➕ إضافة مشروع جديد</button>';
-
-  h += '<div class="card"><h2>المشروع المفتوح</h2>';
+  H0 = h; h = '<button class="addp" id="addp">➕ إضافة مشروع جديد</button>';
   if (!d.projects.length) h += '<div class="mut">لا توجد مشاريع بعد.</div>';
   d.projects.forEach(p => {
     const pct = p.required ? Math.min(100, Math.round(p.collected / p.required * 100)) : 0;
@@ -280,9 +350,9 @@ function render() {
       '<div class="pb"><i style="width:' + pct + '%"></i></div>' +
       '<div class="pg"><span>محصّل ' + money(p.collected) + '</span><span>من ' + money(p.required) + ' (' + pct + '%)</span></div></div>';
   });
-  h += '</div>';
+  SC.proj = sec('proj', '🏗️', 'المشروع المفتوح', d.projects.filter(p => p.open).length, h, false); h = H0;
 
-  h += '<div class="card"><h2>إيصالات تنتظر المراجعة' + (d.claims.length ? ' (' + d.claims.length + ')' : '') + '</h2>';
+  H0 = h; h = '';
   if (!d.claims.length) h += '<div class="mut">لا توجد إيصالات معلّقة ✓</div>';
   d.claims.forEach((c, i) => {
     h += '<div class="cl"><div class="top"><div class="name">شقة ' + esc(c.apt) + (c.name ? ' · ' + esc(c.name) : '') + (c.method ? ' <span class="chip wait">' + esc(c.method) + '</span>' : '') + '</div><b>' + money(c.amount) + '</b></div>' +
@@ -290,16 +360,17 @@ function render() {
       c.files.map((u, n) => '<a href="' + esc(u) + '" target="_blank" rel="noopener">🖼️ إيصال ' + (c.files.length > 1 ? (n + 1) : '') + '</a>').join('') +
       '</div><div class="acts"><button class="yes" data-c="' + i + '">✅ تأكيد</button><button class="no" data-r="' + i + '">❌ رفض</button></div></div>';
   });
-  h += '</div>';
+  SC.claims = sec('claims', '🧾', 'إيصالات تنتظر المراجعة', d.claims.length, h, d.claims.length > 0); h = H0;
 
   const bm = d.byMethod || { fund: [], project: [] };
   const mrows = (t, a) => a.length ? '<div class="mut" style="margin:8px 0 2px"><b>' + t + '</b></div>' + a.map(x => '<div class="prow"><div class="pn">' + esc(x[0]) + '</div><div class="pa">' + money(x[1]) + '</div></div>').join('') : '';
-  h += '<div class="card"><h2>التحصيل حسب وسيلة الدفع</h2>' + (bm.fund.length || bm.project.length ? mrows('صندوق الصيانة', bm.fund) + mrows('المشاريع', bm.project) : '<div class="mut">لا توجد دفعات بعد.</div>') + '</div>';
-  h += '<div class="card"><h2>آخر الدفعات</h2>' + ((d.recent || []).length ? d.recent.map(r => '<div class="prow"><div><div class="pn">شقة ' + esc(r.apt) + ' · ' + esc(r.desc) + '</div><div class="mut">' + esc(r.date) + (r.method ? ' · ' + esc(r.method) : '') + '</div></div><div class="pa">' + money(r.amount) + '</div></div>').join('') : '<div class="mut">لا توجد دفعات بعد.</div>') + '</div>';
+  let pay = '<div class="mut" style="margin:2px 0 4px"><b>التحصيل حسب وسيلة الدفع</b></div>' + (bm.fund.length || bm.project.length ? mrows('صندوق الصيانة', bm.fund) + mrows('المشاريع', bm.project) : '<div class="mut">لا توجد دفعات بعد.</div>');
+  pay += '<div class="mut" style="margin:14px 0 4px"><b>آخر الدفعات</b></div>' + ((d.recent || []).length ? d.recent.map(r => '<div class="prow"><div><div class="pn">شقة ' + esc(r.apt) + ' · ' + esc(r.desc) + '</div><div class="mut">' + esc(r.date) + (r.method ? ' · ' + esc(r.method) : '') + '</div></div><div class="pa">' + money(r.amount) + '</div></div>').join('') : '<div class="mut">لا توجد دفعات بعد.</div>');
+  SC.pay = sec('pay', '💰', 'التحصيل وآخر الدفعات', '', pay, false);
 
   const ads = d.ads || { pending: [], live: [] };
   const ATL = { sell: 'للبيع', service: 'أقدّم خدمة', request: 'أطلب خدمة' };
-  h += '<div class="card"><h2>إعلانات السكان' + (ads.pending.length ? ' (' + ads.pending.length + ' بانتظارك)' : '') + '</h2>';
+  H0 = h; h = '';
   if (!ads.pending.length && !ads.live.length) h += '<div class="mut">مفيش إعلانات من السكان.</div>';
   ads.pending.forEach(x => {
     h += '<div class="cl"><div class="top"><div class="name">شقة ' + esc(x.apt) + '</div><span class="chip wait">' + esc(ATL[x.type] || '') + '</span></div>' +
@@ -312,9 +383,9 @@ function render() {
       '<div style="margin:6px 0;line-height:1.7">' + esc(x.text) + '</div><div class="meta">ينتهي ' + esc(x.until) + '</div>' + (x.imgUrl ? '<div><a href="' + esc(x.imgUrl) + '" target="_blank" rel="noopener" style="color:var(--ac);font-weight:700;font-size:14px;text-decoration:none">🖼️ عرض الصورة</a></div>' : '') +
       '<div class="acts"><button class="no" data-adx="' + esc(x.id) + '">🗑️ إزالة</button></div></div>';
   });
-  h += '</div>';
+  SC.ads = sec('ads', '📣', 'إعلانات السكان', ads.pending.length, h, ads.pending.length > 0); h = H0;
 
-  h += '<div class="card"><h2>شقق لم تُنهِ السداد (' + d.late.length + ')</h2>';
+  H0 = h; h = '';
   if (!d.late.length) h += '<div class="mut">الكل أنهى السداد 🎉</div>';
   d.late.forEach((x, i) => {
     h += '<div class="lr"><div><div class="nm">شقة ' + esc(x.apt) + (x.name ? ' · ' + esc(x.name) : '') + '</div><div class="rm">المتبقي ' + money(x.remaining) + '</div></div>' +
@@ -322,12 +393,12 @@ function render() {
   });
   if (d.late.some(x => x.phone)) h += '<button class="wide" id="all">📲 تنبيه كل الشقق</button>';
   if (d.late.some(x => x.mail)) h += '<button class="wide" id="mailall">✉️ إيميل للمتأخرين (' + d.late.filter(x => x.mail).length + ')</button>';
-  h += '</div>';
+  SC.late = sec('late', '⏰', 'شقق لم تُنهِ السداد', d.late.length, h, false); h = H0;
 
 
   const dv = d.devices || [], pb = d.probe || { probes: [], locks: [] };
   const pendN = dv.reduce((n, x) => n + x.apts.filter(a => a.st === 'wait').length, 0), alertOn = pendN || pb.locks.length;
-  let dh = '<div class="card"' + (alertOn ? ' style="border:2px solid var(--bad)"' : '') + '><h2>' + (alertOn ? '🚨 ' : '') + 'الأجهزة ومحاولات الدخول</h2>';
+  let dh = '';
   if (pb.locks.length) dh += '<div class="cl"><div class="name">🔒 شقق مقفولة الآن</div>' + pb.locks.map(x => '<div class="meta">شقة ' + esc(x.apt) + ' · مقفولة حتى ' + esc(x.until) + '</div>').join('') + '</div>';
   dh += '<div class="mut" style="margin:10px 0 4px"><b>محاولات دخول فاشلة (آخر 24 ساعة)</b></div>';
   if (!pb.probes.length) dh += '<div class="mut">لا توجد محاولات فاشلة ✓</div>';
@@ -347,14 +418,13 @@ function render() {
         '<button class="' + (a.st === 'block' ? 'on-bad' : '') + '" data-dv="' + i + '|' + esc(a.apt) + '|block">⛔ منع</button></div></div>').join('') +
       '<div class="dvr"><div><b>⭐ كل الشقق</b> <span class="mut">جهاز الأمين</span></div><div class="seg"><button class="' + (x.all ? 'on-ok' : '') + '" data-dv="' + i + '|*|all">تشغيل</button><button class="' + (x.all ? '' : 'on-off') + '" data-dv="' + i + '|*|unall">إيقاف</button></div></div></div>';
   });
-  dh += '</div>';
-  if (alertOn) h += dh;
+  SC.dev = sec('dev', alertOn ? '🚨' : '🛡️', 'الأجهزة ومحاولات الدخول', pendN + pb.locks.length, dh, !!alertOn, !!alertOn);
 
   const nt = d.notify || [];
   if (nt.length) {
     const cur = nt.find(i => i.code === NSEL) || nt[0]; NSEL = cur.code;
     const readyN = cur.list.filter(x => x.ready && x.phone).length;
-    h += '<div class="card"><h2>تنبيه بند جديد</h2><select id="nsel">' + nt.map(i => '<option value="' + esc(i.code) + '"' + (i.code === NSEL ? ' selected' : '') + '>' + esc(i.desc) + ' · ' + money(i.amount) + '</option>').join('') + '</select>';
+    H0 = h; h = '<select id="nsel">' + nt.map(i => '<option value="' + esc(i.code) + '"' + (i.code === NSEL ? ' selected' : '') + '>' + esc(i.desc) + ' · ' + money(i.amount) + '</option>').join('') + '</select>';
     if (!cur.list.length) h += '<div class="mut" style="margin-top:10px">كل الشقق أكملت هذا البند ✓</div>';
     cur.list.forEach((x, k) => {
       const stt = !x.last ? 'لم يُنبَّه' : (x.ready ? 'تم التنبيه ' + x.last + ' · جاهز من جديد' : 'تم التنبيه ✓ ' + x.last + ' · حاول بعد ' + x.left + ' يوم');
@@ -362,11 +432,11 @@ function render() {
         '<button class="wa" data-n="' + k + '"' + (x.phone && x.ready ? '' : ' disabled') + '>' + (!x.phone ? 'بلا موبايل' : (x.ready ? '📲 تنبيه' : 'تم ✓')) + '</button></div>';
     });
     if (readyN) h += '<button class="wide" id="nall">📲 تنبيه الجاهزين (' + readyN + ')</button>';
-    h += '</div>';
+    SC.notify = sec('notify', '🔔', 'تنبيه بند جديد', '', h, false); h = H0;
   }
 
   const SST = { pending: ['مجدولة', 'wait'], done: ['تم', 'ok'], failed: ['فشل', 'bad'], cancelled: ['ملغية', 'wait'] };
-  h += '<div class="card"><h2>رسائل مجدولة</h2><button class="addp" id="sadd">➕ جدولة رسالة أو إجراء</button>';
+  H0 = h; h = '<button class="addp" id="sadd">➕ جدولة رسالة أو إجراء</button>';
   if (!(d.sched || []).length) h += '<div class="mut">لا توجد رسائل مجدولة.</div>';
   (d.sched || []).forEach(x => {
     h += '<div class="cl"><div class="top"><div class="name">' + esc(x.act) + (x.target ? ' · ' + esc(x.target) : '') + '</div><span class="chip ' + SST[x.st][1] + '">' + SST[x.st][0] + '</span></div>' +
@@ -374,28 +444,30 @@ function render() {
       (x.note ? '<div class="meta">' + esc(x.note) + '</div>' : '') +
       (x.st === 'pending' ? '<div style="margin-top:8px"><button class="sdel" data-sd="' + esc(x.id) + '">إلغاء</button></div>' : '') + '</div>';
   });
-  h += '<div class="mut" style="margin-top:8px">التنفيذ تلقائي خلال ساعة من الموعد.</div></div>';
-
-  if (!alertOn) h += dh;
-  h += '<div class="card"><h2>العرض للسكان</h2>' +
+  h += '<div class="mut" style="margin-top:8px">التنفيذ تلقائي خلال ساعة من الموعد.</div>';
+  SC.sched = sec('sched', '⏱️', 'رسائل مجدولة', (d.sched || []).filter(x => x.st === 'pending').length, h, false); h = H0;
+  SC.show = sec('show', '👁️', 'العرض للسكان', '',
     toggleRow('show_fund', 'مبلغ صندوق الصيانة', 'يظهر في صفحة الساكن', d.show.fund) +
     toggleRow('show_project', 'مبلغ المشروع المفتوح', 'ما تم تحصيله من المطلوب', d.show.project) +
     toggleRow('show_project_fund', 'صندوق المشروع (الفائض)', 'رصيد كل مشروع في صفحة الساكن', d.show.project_fund) +
     toggleRow('monthly_on', 'صندوق الصيانة الشهري', 'يظهر أول كل شهر للسكان (المبلغ من الإعدادات)', d.show.monthly_on) +
-    toggleRow('show_quote', 'جملة اليوم', 'جملة قصيرة يومية أعلى الصفحة', d.show.quote) + '</div>';
+    toggleRow('show_quote', 'جملة اليوم', 'جملة قصيرة يومية أعلى الصفحة', d.show.quote), false);
 
   const anns = d.announcements || [d.announcement || '', '', ''];
-  h += '<div class="card"><h2>الإعلانات (حتى 3)</h2><div class="mut" style="margin-bottom:10px">تظهر أعلى صفحة السكان، واترك أي خانة فارغة لإخفائها.</div>' +
+  SC.ann = sec('ann', '📢', 'إعلانات أعلى صفحة السكان', '', '<div class="mut" style="margin-bottom:10px">تظهر أعلى صفحة السكان، واترك أي خانة فارغة لإخفائها.</div>' +
     [0, 1, 2].map(i => '<div class="mut" style="margin:10px 0 4px">إعلان ' + (i + 1) + '</div><textarea id="ann' + i + '" maxlength="500" placeholder="اكتب الإعلان هنا">' + esc(anns[i] || '') + '</textarea>').join('') +
-    '<button class="btn" id="annsv">حفظ الإعلانات</button></div>';
+    '<button class="btn" id="annsv">حفظ الإعلانات</button>', false);
+
+  const tile = (k, ic, lb, n) => '<button class="tile' + (n ? ' hot' : '') + '" data-go="' + k + '"><b>' + ic + ' ' + n + '</b><span>' + lb + '</span></button>';
+  h += '<div class="tiles">' + tile('claims', '🧾', 'إيصالات', d.claims.length) + tile('ads', '📣', 'إعلانات', ads.pending.length) + tile('late', '⏰', 'متأخرين', d.late.length) + tile('dev', '🛡️', 'أجهزة', pendN + pb.locks.length) + '</div>';
+  h += ['claims', 'ads'].concat(alertOn ? ['dev'] : [], ['late', 'proj', 'pay', 'notify', 'sched'], alertOn ? [] : ['dev'], ['show', 'ann']).map(k => SC[k] || '').join('');
 
   $('view').innerHTML = h;
   window.scrollTo(0, sc);
 
-  $('out').onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} CODE = ''; TOK = ''; D = null; $('view').hidden = true; $('login').hidden = false; $('code').value = ''; };
-  $('rf').onclick = () => { reload(); toast('تم التحديث'); };
-  const ib = $('inst'); if (ib) ib.onclick = installApp;
   $('addp').onclick = addProject;
+  document.querySelectorAll('details.sec > summary').forEach(sm => sm.addEventListener('click', () => setTimeout(() => { const dt = sm.parentElement; OPEN[dt.dataset.sec] = dt.open; try { localStorage.setItem('bf_open', JSON.stringify(OPEN)); } catch (e) {} }, 0)));
+  document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => openSec(b.dataset.go));
   $('sadd').onclick = addSched;
   document.querySelectorAll('[data-sd]').forEach(b => b.onclick = async () => {
     if (!confirm('إلغاء هذه الرسالة المجدولة؟')) return;
@@ -434,9 +506,9 @@ function render() {
     try { const r = await api({ action: 'a_ann', texts: [0, 1, 2].map(i => $('ann' + i).value) }); toast(r.ok ? 'تم حفظ الإعلانات' : (ERR[r.error] || 'تعذر الحفظ')); } catch (e) { toast('تعذر الاتصال'); }
     $('annsv').disabled = false; BUSY = false;
   };
-  document.querySelectorAll('[data-c]').forEach(b => b.onclick = () => decide(d.claims[Number(b.dataset.c)], 'c', ''));
+  document.querySelectorAll('.yes[data-c]').forEach(b => b.onclick = () => decide(d.claims[Number(b.dataset.c)], 'c', ''));
   document.querySelectorAll('[data-r]').forEach(b => b.onclick = () => askReject(d.claims[Number(b.dataset.r)]));
-  document.querySelectorAll('[data-w]').forEach(b => b.onclick = () => window.open(waLink(d.late[Number(b.dataset.w)]), '_blank'));
+  document.querySelectorAll('.wa[data-w]').forEach(b => b.onclick = () => window.open(waLink(d.late[Number(b.dataset.w)]), '_blank'));
   document.querySelectorAll('[data-adp]').forEach(b => b.onclick = () => adAct(b.dataset.adp, 'p', ''));
   document.querySelectorAll('[data-adr]').forEach(b => b.onclick = () => askAdReject(b.dataset.adr));
   document.querySelectorAll('[data-adx]').forEach(b => b.onclick = () => { if (confirm('إزالة الإعلان؟')) adAct(b.dataset.adx, 'x', ''); });
@@ -651,6 +723,88 @@ async function installApp() {
   $('icx').onclick = close;
   ov.onclick = e => { if (e.target === ov) close(); };
 }
+// ---------- القائمة الجانبية + Powered by ----------
+const CREATOR = { wa: 'H.khaled369', tg: 'Hkhaled369' };
+const TKEY = 'bf_theme';
+let THEME = 'auto';
+try { const th = localStorage.getItem(TKEY); if (th === 'light' || th === 'dark') THEME = th; } catch (e) {}
+let DW = { sub: '', refresh: function () {}, logout: function () {} };
+function applyTheme() { const r = document.documentElement; if (THEME === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', THEME); }
+function setTheme(v) { THEME = v; try { if (v === 'auto') localStorage.removeItem(TKEY); else localStorage.setItem(TKEY, v); } catch (e) {} applyTheme(); dwBuild(); }
+function dwOpen() { dwBuild(); $('dwov').hidden = false; $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden', 'false'); }
+function dwClose() { $('dwov').hidden = true; $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden', 'true'); }
+function dwShow(on) { $('dwbtn').hidden = !on; if (!on) dwClose(); }
+function dwBuild() {
+  const seg = [['auto', 'تلقائي'], ['light', 'فاتح'], ['dark', 'داكن']].map(o => '<button data-theme="' + o[0] + '" class="' + (THEME === o[0] ? 'on' : '') + '">' + o[1] + '</button>').join('');
+  let h = '<div class="dwh"><div><b>القائمة</b>' + (DW.sub ? '<div class="mut">' + esc(DW.sub) + '</div>' : '') + '</div><button class="x" id="dwx" aria-label="إغلاق">✕</button></div>';
+  h += '<div class="dws"><div class="dwl">🌓 الوضع</div><div class="tseg">' + seg + '</div></div>';
+  h += '<div class="dws"><div class="dwl">🔔 التنبيه الصوتي</div><div class="tseg"><button data-snd="1" class="' + (SND ? 'on' : '') + '">يعمل</button><button data-snd="0" class="' + (SND ? '' : 'on') + '">متوقف</button></div></div>';
+  h += '<div class="dws"><button class="dwi" id="dwrf">🔄 تحديث البيانات</button>' + (isStandalone() ? '' : '<button class="dwi" id="dwin">📲 تثبيت كتطبيق</button>') + '</div>';
+  h += '<button class="dwi danger" id="dwout">🚪 تسجيل الخروج</button>';
+  h += '<button class="pwr" id="pwr" aria-label="Powered by H.khaled"><span class="p1">Powered by</span><span class="p2"><i>✦</i>H. Khaled<i>✦</i></span></button>';
+  $('drawer').innerHTML = h;
+  $('dwx').onclick = dwClose;
+  $('dwrf').onclick = () => { dwClose(); DW.refresh(); };
+  const di = $('dwin'); if (di) di.onclick = () => { dwClose(); installApp(); };
+  $('dwout').onclick = () => { dwClose(); DW.logout(); };
+  $('pwr').onclick = contactSheet;
+  document.querySelectorAll('#drawer button[data-snd]').forEach(b => b.onclick = () => { SND = b.dataset.snd === '1'; try { localStorage.setItem(SKEY, SND ? '1' : '0'); } catch (e) {} unlockAudio(); if (SND) beep(); dwBuild(); });
+  document.querySelectorAll('#drawer button[data-theme]').forEach(b => b.onclick = () => setTheme(b.dataset.theme));
+}
+// ---------- تنبيه صوتي ----------
+const SKEY = 'bf_snd';
+let SND = true, AC = null, LAST_SEQ = null;
+try { SND = localStorage.getItem(SKEY) !== '0'; } catch (e) {}
+function unlockAudio() { try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) {} }
+['click', 'touchstart', 'keydown'].forEach(ev => document.addEventListener(ev, unlockAudio, { passive: true }));
+function beep() {
+  if (!SND) return; unlockAudio();
+  try {
+    const t0 = AC.currentTime;
+    [[880, 0], [1175, 0.16], [1568, 0.32]].forEach(p => { const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sine'; o.frequency.value = p[0]; g.gain.setValueAtTime(0.0001, t0 + p[1]); g.gain.exponentialRampToValueAtTime(0.4, t0 + p[1] + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + p[1] + 0.35); o.connect(g); g.connect(AC.destination); o.start(t0 + p[1]); o.stop(t0 + p[1] + 0.4); });
+  } catch (e) {}
+}
+let PING_BUSY = false;
+async function pingSeq() {
+  if (!TOK || PING_BUSY || $('view').hidden) return;
+  PING_BUSY = true;
+  try {
+    const d = await api({ action: 'a_ping' });
+    if (d && d.ok) {
+      if (LAST_SEQ === null) LAST_SEQ = d.seq;
+      else if (d.seq !== LAST_SEQ) {
+        LAST_SEQ = d.seq;
+        beep(); toast('🔔 ' + (d.kind || 'حدث جديد'));
+        if (!BUSY && !document.querySelector('.ov') && !(document.activeElement && /TEXTAREA|INPUT/.test(document.activeElement.tagName))) reload();
+      }
+    }
+  } catch (e) {}
+  PING_BUSY = false;
+}
+setInterval(pingSeq, 12000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pingSeq(); });
+function trackContact(ch) {
+  try { fetch(API_URL, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'contact_click', ch: ch, tok: TOK, did: DID, ua: (navigator.userAgent || '').slice(0, 160) }) }).catch(() => {}); } catch (e) {}
+}
+function contactSheet() {
+  dwClose();
+  const ov = document.createElement('div');
+  ov.className = 'ov';
+  ov.innerHTML = '<div class="sheet"><h2>تواصل مع المنشئ</h2><div class="mut" style="line-height:1.9">هل تريد نظاماً مثل هذا لعمارتك أو نشاطك؟ يسعدني التواصل معك.</div>' +
+    '<div class="cxs"><a class="wa2" data-ch="wa" target="_blank" rel="noopener" href="https://wa.me/@' + CREATOR.wa + '">💬 واتساب</a><a class="tg2" data-ch="tg" target="_blank" rel="noopener" href="https://t.me/' + CREATOR.tg + '">✈️ تليجرام</a></div>' +
+    '<button class="btn" id="cxx" style="margin-top:14px">إغلاق</button></div>';
+  document.body.appendChild(ov);
+  ov.querySelectorAll('a[data-ch]').forEach(a => a.addEventListener('click', () => trackContact(a.dataset.ch)));
+  const close = () => ov.remove();
+  $('cxx').onclick = close;
+  ov.onclick = e => { if (e.target === ov) close(); };
+}
+$('dwbtn').onclick = dwOpen;
+$('dwov').onclick = dwClose;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') dwClose(); });
+
+DW.refresh = () => { reload(); toast('تم التحديث'); };
+DW.logout = () => { try { localStorage.removeItem(KEY); } catch (e) {} CODE = ''; TOK = ''; D = null; LAST_SEQ = null; $('view').hidden = true; $('login').hidden = false; $('code').value = ''; dwShow(false); };
 if ('serviceWorker' in navigator && location.protocol === 'https:') { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
 
 // تحديث تلقائي كل دقيقة لو لا توجد نافذة مفتوحة، فيظهر أي تعديل تم في الشيت
