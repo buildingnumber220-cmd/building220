@@ -160,6 +160,13 @@ input.t{text-align:right;letter-spacing:0;font-size:16px}
 .pg{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);margin-top:8px}
 .netbar{position:fixed;top:0;inset-inline:0;z-index:70;padding:calc(6px + env(safe-area-inset-top,0px)) 12px 6px;text-align:center;font-size:13px;font-weight:700;background:var(--warnbg);color:var(--warn);border-bottom:1px solid var(--br)}
 .netbar[hidden]{display:none}
+
+.dvc{border-radius:16px;margin-top:10px;padding:14px;background:var(--okbg);border:1.5px solid transparent}.dvc.pend{background:var(--badbg);border-color:var(--bad)}
+.dvr{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--br)}
+.seg{display:inline-flex;border-radius:12px;overflow:hidden;border:1.5px solid var(--br);background:var(--card,transparent);flex-shrink:0}
+.seg button{border:0;background:transparent;color:inherit;opacity:.55;padding:9px 14px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.seg button+button{border-inline-start:1.5px solid var(--br)}
+.seg button.on-ok{background:var(--ok);color:#fff;opacity:1}.seg button.on-bad{background:var(--bad);color:#fff;opacity:1}.seg button.on-off{background:var(--mut);color:#fff;opacity:1}
 </style>
 </head>
 <body>
@@ -319,23 +326,26 @@ function render() {
 
 
   const dv = d.devices || [], pb = d.probe || { probes: [], locks: [] };
-  const pendN = dv.reduce((n, x) => n + x.p.length, 0), alertOn = pendN || pb.locks.length;
-  let dh = '<div class="card"' + (alertOn ? ' style="border:2px solid #c0392b"' : '') + '><h2>' + (alertOn ? '🚨 ' : '') + 'الأجهزة ومحاولات الدخول</h2>';
-  if (pb.locks.length) dh += '<div class="cl" style="border-color:#c0392b"><div class="name">🔒 شقق مقفولة الآن</div>' + pb.locks.map(x => '<div class="meta">شقة ' + esc(x.apt) + ' · مقفولة حتى ' + esc(x.until) + '</div>').join('') + '</div>';
+  const pendN = dv.reduce((n, x) => n + x.apts.filter(a => a.st === 'wait').length, 0), alertOn = pendN || pb.locks.length;
+  let dh = '<div class="card"' + (alertOn ? ' style="border:2px solid var(--bad)"' : '') + '><h2>' + (alertOn ? '🚨 ' : '') + 'الأجهزة ومحاولات الدخول</h2>';
+  if (pb.locks.length) dh += '<div class="cl"><div class="name">🔒 شقق مقفولة الآن</div>' + pb.locks.map(x => '<div class="meta">شقة ' + esc(x.apt) + ' · مقفولة حتى ' + esc(x.until) + '</div>').join('') + '</div>';
   dh += '<div class="mut" style="margin:10px 0 4px"><b>محاولات دخول فاشلة (آخر 24 ساعة)</b></div>';
   if (!pb.probes.length) dh += '<div class="mut">لا توجد محاولات فاشلة ✓</div>';
   pb.probes.forEach(x => {
-    dh += '<div class="cl"><div class="top"><div class="name">' + esc(x.name || x.did) + (x.home ? ' · شقته ' + esc(x.home) : ' · شقته غير معروفة') + '</div><span class="chip bad">' + x.n + ' محاولات</span></div>' +
+    dh += '<div class="cl"><div class="top"><div class="name">' + esc(x.name || x.did) + (x.home ? ' · من شقة ' + esc(x.home) : ' · شقته غير معروفة') + '</div><span class="chip bad">' + x.n + ' محاولات</span></div>' +
       '<div class="meta">المستهدفة: ' + x.targets.map(t => 'شقة ' + esc(t.apt) + ' (' + t.n + ')' + (t.locked ? ' 🔒' : '')).join('، ') + ' · آخر محاولة ' + esc(x.last) + '</div></div>';
   });
   dh += '<div class="mut" style="margin:14px 0 4px"><b>الأجهزة (' + dv.length + ')</b></div>';
   if (!dv.length) dh += '<div class="mut">لم يُسجَّل جهاز بعد.</div>';
   dv.forEach((x, i) => {
-    dh += '<div class="cl"' + (x.p.length ? ' style="border-color:#c0392b"' : '') + '><div class="top"><div class="name">' + esc(x.name || x.did) + ' · شقة ' + esc(x.home || '-') + '</div><button class="sdel" data-dn="' + i + '">✏️ تسمية</button></div>' +
-      '<div class="meta">آخر ظهور ' + esc(x.last || '-') + (x.a.length ? ' · مسموح: ' + x.a.map(a => a === '*' ? 'كل الشقق' : esc(a)).join('، ') : '') + '</div>' +
-      '<div class="meta" style="margin-top:6px"><button class="' + (x.a.indexOf('*') >= 0 ? 'no' : 'yes') + '" data-dv="' + i + '|*|' + (x.a.indexOf('*') >= 0 ? 'unall' : 'all') + '">' + (x.a.indexOf('*') >= 0 ? 'إلغاء «كل الشقق»' : '⭐ جهاز الأمين: كل الشقق') + '</button></div>' +
-      x.p.map(a => '<div class="meta" style="margin-top:6px">🚨 دخل شقة <b>' + esc(a) + '</b> <button class="yes" data-dv="' + i + '|' + esc(a) + '|allow">✅ سماح</button> <button class="no" data-dv="' + i + '|' + esc(a) + '|block">⛔ منع</button></div>').join('') +
-      x.b.map(a => '<div class="meta" style="margin-top:6px">⛔ شقة <b>' + esc(a) + '</b> ممنوعة <button class="sdel" data-dv="' + i + '|' + esc(a) + '|unblock">رفع المنع</button></div>').join('') + '</div>';
+    const wn = x.apts.filter(a => a.st === 'wait').length;
+    dh += '<div class="cl dvc' + (wn ? ' pend' : '') + '"><div class="top"><div class="name">' + esc(x.label) + '</div>' +
+      '<span class="chip ' + (wn ? 'late' : 'ok') + '">' + (wn ? 'بانتظار قرارك (' + wn + ')' : '✓ مؤكَّد') + '</span></div>' +
+      '<div class="meta">شقته: ' + esc(x.home || '-') + (x.homeName ? ' · ' + esc(x.homeName) : '') + ' · آخر ظهور ' + esc(x.last || '-') + '</div>' +
+      x.apts.map(a => '<div class="dvr"><div><b>شقة ' + esc(a.apt) + '</b>' + (a.name ? ' <span class="mut">' + esc(a.name) + '</span>' : '') + '</div>' +
+        '<div class="seg"><button class="' + (a.st === 'allow' ? 'on-ok' : '') + '" data-dv="' + i + '|' + esc(a.apt) + '|allow">✅ سماح</button>' +
+        '<button class="' + (a.st === 'block' ? 'on-bad' : '') + '" data-dv="' + i + '|' + esc(a.apt) + '|block">⛔ منع</button></div></div>').join('') +
+      '<div class="dvr"><div><b>⭐ كل الشقق</b> <span class="mut">جهاز الأمين</span></div><div class="seg"><button class="' + (x.all ? 'on-ok' : '') + '" data-dv="' + i + '|*|all">تشغيل</button><button class="' + (x.all ? '' : 'on-off') + '" data-dv="' + i + '|*|unall">إيقاف</button></div></div></div>';
   });
   dh += '</div>';
   if (alertOn) h += dh;
@@ -394,17 +404,11 @@ function render() {
     b.disabled = false; BUSY = false;
   });
   document.querySelectorAll('[data-dv]').forEach(b => b.onclick = async () => {
+    if (/on-(ok|bad|off)/.test(b.className)) return;
     const [i, apt, op] = b.dataset.dv.split('|'), x = D.devices[+i];
-    if (!x || !confirm(op === 'all' ? 'السماح لهذا الجهاز بكل الشقق بلا إنذار؟' : op === 'unall' ? 'إلغاء السماح بكل الشقق لهذا الجهاز؟' : op === 'block' ? 'منع شقة ' + apt + ' على هذا الجهاز؟' : op === 'allow' ? 'السماح بشقة ' + apt + ' لهذا الجهاز؟' : 'رفع المنع عن شقة ' + apt + '؟')) return;
+    if (!x || (op === 'block' && !confirm('منع شقة ' + apt + ' على هذا الجهاز؟'))) return;
     b.disabled = true; BUSY = true;
     try { const r = await api({ action: 'a_dev_set', did: x.did, apt: apt === '*' ? '' : apt, op: op }); if (r.ok) { toast('تم'); await reload(); } else toast(ERR[r.error] || 'تعذر الحفظ'); } catch (e) { toast('تعذر الاتصال'); }
-    b.disabled = false; BUSY = false;
-  });
-  document.querySelectorAll('[data-dn]').forEach(b => b.onclick = async () => {
-    const x = D.devices[+b.dataset.dn]; if (!x) return;
-    const nm = prompt('اسم الجهاز (مثلاً: موبايل أحمد)', x.name || ''); if (nm === null) return;
-    b.disabled = true; BUSY = true;
-    try { const r = await api({ action: 'a_dev_name', did: x.did, name: nm }); if (r.ok) { toast('تم'); await reload(); } else toast(ERR[r.error] || 'تعذر الحفظ'); } catch (e) { toast('تعذر الاتصال'); }
     b.disabled = false; BUSY = false;
   });
   document.querySelectorAll('.wk').forEach(b => b.onclick = async () => {
