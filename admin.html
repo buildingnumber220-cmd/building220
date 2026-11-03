@@ -11,7 +11,7 @@
 <link rel="manifest" href="admin.webmanifest">
 <link rel="apple-touch-icon" href="admin-apple-touch-icon.png">
 <link rel="icon" type="image/png" href="admin-192.png">
-<title>إدارة عمارة 220</title>
+<title>إدارة العمارة</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Noto+Kufi+Arabic:wght@500;600;700&display=swap" rel="stylesheet">
@@ -225,19 +225,8 @@ details.sec>.sbd{padding:14px 16px}
 <div id="netbar" class="netbar" role="status" hidden></div>
 <button id="dwbtn" class="dwbtn" aria-label="القائمة" hidden>☰</button>
 <header class="brand">
-  <div class="emb"><svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true">
-        <defs>
-          <g id="pt"><path d="M0,-4 C-9,-8 -11,-19 -6,-24 C-4,-21 -2,-22 0,-25 C2,-22 4,-21 6,-24 C11,-19 9,-8 0,-4Z"/></g>
-        </defs>
-        <path d="M32 40 C32 49 31 55 30 61" stroke="#7fd1a0" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-        <path d="M31 52 C24 50 20 46 19 41 C25 41 29 45 31 52Z" fill="#7fd1a0"/>
-        <g transform="translate(32 27)">
-          <g fill="#ff8db0"><use href="#pt"/><use href="#pt" transform="rotate(45)"/><use href="#pt" transform="rotate(90)"/><use href="#pt" transform="rotate(135)"/><use href="#pt" transform="rotate(180)"/><use href="#pt" transform="rotate(225)"/><use href="#pt" transform="rotate(270)"/><use href="#pt" transform="rotate(315)"/></g>
-          <g fill="#ffb3cb" transform="scale(.72)"><use href="#pt" transform="rotate(22)"/><use href="#pt" transform="rotate(67)"/><use href="#pt" transform="rotate(112)"/><use href="#pt" transform="rotate(157)"/><use href="#pt" transform="rotate(202)"/><use href="#pt" transform="rotate(247)"/><use href="#pt" transform="rotate(292)"/><use href="#pt" transform="rotate(337)"/></g>
-          <circle r="4.2" fill="#ffd9e5"/>
-        </g>
-      </svg></div>
-  <h1>عمارة 220</h1>
+  <div class="emb" id="emb"></div>
+  <h1 id="bn"></h1>
   <div class="sub"><i></i>لوحة أمين الصندوق<i></i></div>
 </header>
 <div class="wrap">
@@ -249,7 +238,7 @@ details.sec>.sbd{padding:14px 16px}
     <div id="err" class="err"></div>
   </div>
   <div id="view" hidden></div>
-  <footer>🌸 عمارة 220 · حي القرنفل</footer>
+  <footer id="bf"></footer>
 </div>
 
 <div id="dwov" class="dwov" hidden></div>
@@ -257,6 +246,19 @@ details.sec>.sbd{padding:14px 16px}
 
 <script>
 // ضع هنا نفس رابط الـ Web App المستخدم في index.html
+// ===== بيانات العمارة (غيّرها لكل عمارة) =====
+// name: الاسم الكبير · sub: السطر الصغير تحته · logo: مسار صورة الشعار بجوار الصفحة (مثل logo.svg أو logo.png)، وفاضي = أيقونة مبنى عامة
+const BUILDING = { name: 'عمارة 220', sub: 'حي القرنفل', logo: 'logo.svg' };
+function applyBrand(admin) {
+  const full = BUILDING.name + (BUILDING.sub ? ' - ' + BUILDING.sub : '');
+  try { document.title = (admin ? 'إدارة ' + BUILDING.name : full); } catch (e) {}
+  try { const mt = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (mt) mt.setAttribute('content', BUILDING.name); } catch (e) {}
+  const eb = document.getElementById('emb'); if (eb) eb.innerHTML = BUILDING.logo ? '<img src="' + BUILDING.logo.replace(/"/g, '') + '" width="52" height="52" alt="" style="object-fit:contain">' : '<svg viewBox="0 0 64 64" width="52" height="52" aria-hidden="true"><rect x="14" y="10" width="36" height="46" rx="3" fill="#a3bcff"/><g fill="#16294d"><rect x="20" y="16" width="7" height="7"/><rect x="31" y="16" width="7" height="7"/><rect x="42" y="16" width="4" height="7"/><rect x="20" y="27" width="7" height="7"/><rect x="31" y="27" width="7" height="7"/><rect x="42" y="27" width="4" height="7"/><rect x="20" y="38" width="7" height="7"/><rect x="31" y="38" width="7" height="7"/><rect x="26" y="46" width="12" height="10"/></g></svg>';
+  const h = document.getElementById('bn'); if (h) h.textContent = BUILDING.name;
+  const sb = document.getElementById('bs'); if (sb && !admin) sb.textContent = BUILDING.sub;
+  const ft = document.getElementById('bf'); if (ft) ft.textContent = '🌸 ' + BUILDING.name + (BUILDING.sub ? ' · ' + BUILDING.sub : '');
+}
+applyBrand(true);
 const API_URL = "https://script.google.com/macros/s/AKfycbzVJd0ogGGgehVNkPVuZyJWbjZeX5MBpkNNziDPv-8HN4LTYCX5gZtcjEKVbggRmDIQ6g/exec";
 
 const $ = id => document.getElementById(id);
@@ -272,7 +274,7 @@ try {
 } catch (e) { DID = 'nostore'; }
 
 const ERR = {
-  bad: 'الرمز غير صحيح.', expired: 'انتهت الجلسة، اكتب الرمز من جديد.', nomail: 'مفيش متأخرين ليهم إيميل مسجّل.', locked: 'تم قفل الدخول مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.',
+  bad: 'الرمز غير صحيح.', expired: 'انتهت الجلسة، اكتب الرمز من جديد.', locked: 'تم قفل الدخول مؤقتاً بسبب محاولات خاطئة. حاول بعد ساعة.',
   off: 'صفحة الإدارة غير مفعّلة: اكتب رمز الإدارة (8 خانات على الأقل) في الإعدادات.',
   act: 'الإجراء غير صحيح.', when: 'اكتب موعداً صحيحاً في المستقبل (خلال سنة).', target: 'الهدف غير صحيح (لشقق محددة اكتب الأرقام).', text: 'اكتب نص الإيميل.', limit: 'وصلت للحد الأقصى من الرسائل المجدولة المعلّقة.',
   recent: 'الشقة اتنبّهت من أقل من 3 أيام.',
@@ -289,7 +291,7 @@ function toast(t) {
   document.body.appendChild(x); setTimeout(() => x.remove(), 2600);
 }
 function waLink(x) {
-  const m = 'السلام عليكم، شقة ' + x.apt + '. نشكر لكم مساهمتكم في صندوق عمارة 220 حي القرنفل، فهي استثمار في راحة الجميع وسلامة المبنى. يتبقى من إسهامكم ' + x.remaining + ' جنيه' +
+  const m = 'السلام عليكم، شقة ' + x.apt + '. نشكر لكم مساهمتكم في صندوق ' + (D.building || 'العمارة') + '، فهي استثمار في راحة الجميع وسلامة المبنى. يتبقى من إسهامكم ' + x.remaining + ' جنيه' +
     (D.pageUrl ? '، ويسعدنا متابعتكم للتفاصيل والمساهمة عبر: ' + D.pageUrl : '.');
   return 'https://wa.me/' + x.phone + '?text=' + encodeURIComponent(m);
 }
@@ -392,7 +394,6 @@ function render() {
       '<button class="wa" data-w="' + i + '"' + (x.phone ? '' : ' disabled') + '>' + (x.phone ? '📲 تنبيه' : 'بلا موبايل') + '</button></div>';
   });
   if (d.late.some(x => x.phone)) h += '<button class="wide" id="all">📲 تنبيه كل الشقق</button>';
-  if (d.late.some(x => x.mail)) h += '<button class="wide" id="mailall">✉️ إيميل للمتأخرين (' + d.late.filter(x => x.mail).length + ')</button>';
   SC.late = sec('late', '⏰', 'شقق لم تُنهِ السداد', d.late.length, h, false); h = H0;
 
 
@@ -516,7 +517,6 @@ function render() {
   const ns = $('nsel'); if (ns) ns.onchange = () => { NSEL = ns.value; render(); };
   document.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { const c = curNotify(); notifyOne(c, c.list[+b.dataset.n]); });
   const na = $('nall'); if (na) na.onclick = notifyQueue;
-  const ml = $('mailall'); if (ml) ml.onclick = askMail;
 }
 
 async function decide(c, act, note) {
@@ -562,25 +562,9 @@ function askReject(c) {
   $('rok').onclick = () => { const n = $('rn').value; s.close(); decide(c, 'r', n); };
 }
 
-function askMail() {
-  const withMail = D.late.filter(x => x.mail).length, noMail = D.late.length - withMail;
-  const s = sheet('<h2>إيميل للمتأخرين</h2><div class="mut">هيتبعت تذكير بإيميل لـ ' + withMail + ' شقة' + (noMail ? '، و' + noMail + ' متأخرين بدون إيميل (واتساب فقط)' : '') + '. الشقة الواحدة مش بتستلم أكتر من إيميل في اليوم.</div>' +
-    '<button class="btn" id="mok">إرسال</button><button class="cancel" id="mcx">إلغاء</button>');
-  $('mcx').onclick = s.close;
-  $('mok').onclick = async () => {
-    $('mok').disabled = true; BUSY = true;
-    try {
-      const r = await api({ action: 'a_mail' });
-      s.close();
-      if (r.ok) toast('اتبعت ' + r.sent + (r.already ? ' · اتبعت قبل كده اليوم: ' + r.already : '') + (r.failed ? ' · فشل: ' + r.failed : '') + (r.noquota ? ' · وقف الحد اليومي: ' + r.noquota : ''));
-      else toast(ERR[r.error] || 'تعذر الإرسال');
-    } catch (e) { s.close(); toast('تعذر الاتصال'); }
-    BUSY = false;
-  };
-}
 function curNotify() { return (D.notify || []).find(i => i.code === NSEL) || (D.notify || [])[0]; }
 function nWaLink(it, x) {
-  const m = 'السلام عليكم، شقة ' + x.apt + '. تم فتح بند جديد في صندوق عمارة 220 حي القرنفل: «' + it.desc + '». المطلوب منكم ' + it.amount + ' جنيه' +
+  const m = 'السلام عليكم، شقة ' + x.apt + '. تم فتح بند جديد في صندوق ' + (D.building || 'العمارة') + ': «' + it.desc + '». المطلوب منكم ' + it.amount + ' جنيه' +
     (it.due ? ' قبل ' + it.due : '') + (D.pageUrl ? '، وتفاصيله ومساهمتكم عبر: ' + D.pageUrl : '.') + ' جزاكم الله خيراً.';
   return 'https://wa.me/' + x.phone + '?text=' + encodeURIComponent(m);
 }
@@ -629,31 +613,25 @@ function addSched() {
   const opts = a => a.map(v => '<option>' + esc(v) + '</option>').join('');
   const tomorrow = new Date(Date.now() + 86400000), pad = n => String(n).padStart(2, '0');
   const s = sheet('<h2>جدولة جديدة</h2>' +
-    '<div class="field"><label>الإجراء</label><select id="sa">' + opts(['إعلان', 'إيميل', 'إظهار', 'إخفاء']) + '</select></div>' +
+    '<div class="field"><label>الإجراء</label><select id="sa">' + opts(['إعلان', 'إظهار', 'إخفاء']) + '</select></div>' +
     '<div class="field" id="stw"><label id="stl"></label><select id="st"></select></div>' +
-    '<div class="field" id="sew" hidden><label>أرقام الشقق (بفاصلة)</label><input class="t" id="se" placeholder="مثال: 1, 4, 7"></div>' +
     '<div class="field" id="sxw"><label>النص</label><textarea id="sx" maxlength="1500" placeholder="اكتب النص هنا"></textarea></div>' +
     '<div class="field"><label>التاريخ</label><input class="t" id="sd" type="date" value="' + tomorrow.getFullYear() + '-' + pad(tomorrow.getMonth() + 1) + '-' + pad(tomorrow.getDate()) + '"></div>' +
     '<div class="field"><label>الوقت</label><input class="t" id="sm" type="time" value="09:00"></div>' +
-    '<div class="mut" style="margin-top:8px">التنفيذ خلال ساعة من الموعد (بتوقيت القاهرة). الإيميل لمن له إيميل مسجّل، وشقة واحدة لا تستلم أكتر من رسالة مجدولة في اليوم.</div>' +
+    '<div class="mut" style="margin-top:8px">التنفيذ خلال ساعة من الموعد (بتوقيت القاهرة).</div>' +
     '<div id="serr" class="err"></div><button class="btn" id="ssv">جدولة</button><button class="cancel" id="scx">إلغاء</button>');
   const sync = () => {
     const a = $('sa').value, tg = $('st');
     $('sxw').hidden = (a === 'إظهار' || a === 'إخفاء');
-    $('sew').hidden = true;
     if (a === 'إعلان') { $('stl').textContent = 'رقم الإعلان (النص فاضي = مسح الإعلان)'; tg.innerHTML = opts(['1', '2', '3']); }
-    else if (a === 'إيميل') { $('stl').textContent = 'المستلمون'; tg.innerHTML = opts(['الكل', 'المتأخرين', 'شقق محددة']); }
     else { $('stl').textContent = a === 'إظهار' ? 'ما الذي يظهر' : 'ما الذي يختفي'; tg.innerHTML = opts(KEYS); }
   };
-  const sync2 = () => { $('sew').hidden = !($('sa').value === 'إيميل' && $('st').value === 'شقق محددة'); };
-  $('sa').onchange = () => { sync(); sync2(); };
-  $('st').onchange = sync2;
+  $('sa').onchange = sync;
   sync();
   $('scx').onclick = s.close;
   $('ssv').onclick = async () => {
     const a = $('sa').value;
     let tg = $('st').value;
-    if (a === 'إيميل' && tg === 'شقق محددة') tg = nd($('se').value);
     $('ssv').disabled = true; $('serr').textContent = '';
     try {
       const r = await api({ action: 'a_sched_add', act: a, target: tg, text: $('sx').value, date: $('sd').value, time: $('sm').value });

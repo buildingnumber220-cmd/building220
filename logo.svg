@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+        <defs>
+          <g id="pt"><path d="M0,-4 C-9,-8 -11,-19 -6,-24 C-4,-21 -2,-22 0,-25 C2,-22 4,-21 6,-24 C11,-19 9,-8 0,-4Z"/></g>
+        </defs>
+        <path d="M32 40 C32 49 31 55 30 61" stroke="#7fd1a0" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M31 52 C24 50 20 46 19 41 C25 41 29 45 31 52Z" fill="#7fd1a0"/>
+        <g transform="translate(32 27)">
+          <g fill="#ff8db0"><use href="#pt"/><use href="#pt" transform="rotate(45)"/><use href="#pt" transform="rotate(90)"/><use href="#pt" transform="rotate(135)"/><use href="#pt" transform="rotate(180)"/><use href="#pt" transform="rotate(225)"/><use href="#pt" transform="rotate(270)"/><use href="#pt" transform="rotate(315)"/></g>
+          <g fill="#ffb3cb" transform="scale(.72)"><use href="#pt" transform="rotate(22)"/><use href="#pt" transform="rotate(67)"/><use href="#pt" transform="rotate(112)"/><use href="#pt" transform="rotate(157)"/><use href="#pt" transform="rotate(202)"/><use href="#pt" transform="rotate(247)"/><use href="#pt" transform="rotate(292)"/><use href="#pt" transform="rotate(337)"/></g>
+          <circle r="4.2" fill="#ffd9e5"/>
+        </g>
+      </svg>
