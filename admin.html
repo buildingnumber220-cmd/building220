@@ -152,6 +152,7 @@ input.t{text-align:right;letter-spacing:0;font-size:16px}
 .cl{padding:14px 0;border-bottom:1px solid var(--br)}
 .cl:last-child{border-bottom:0;padding-bottom:0}.cl:first-of-type{padding-top:0}
 .cl .acts{display:flex;gap:8px;margin-top:10px}
+.xb{margin-inline-end:6px;margin-top:6px;padding:6px 12px;border-radius:99px;border:1.5px solid var(--ac);background:transparent;color:var(--ac);font-family:inherit;font-weight:700;font-size:13px;cursor:pointer}.xb.on{background:var(--ac);color:#fff}.xb.cl2{border-color:var(--bad);color:var(--bad)}
 .cl .acts button{flex:1;padding:11px;border-radius:12px;border:0;font-family:inherit;font-weight:700;font-size:15px;cursor:pointer}
 .cl .yes{background:var(--ok);color:#fff}.cl .no{background:var(--badbg);color:var(--bad)}
 .cl a{color:var(--ac);font-weight:700;font-size:14px;margin-inline-end:12px;text-decoration:none}
@@ -279,7 +280,7 @@ const ERR = {
   act: 'الإجراء غير صحيح.', when: 'اكتب موعداً صحيحاً في المستقبل (خلال سنة).', target: 'الهدف غير صحيح (لشقق محددة اكتب الأرقام).', text: 'اكتب نص الإيميل.', limit: 'وصلت للحد الأقصى من الرسائل المجدولة المعلّقة.',
   recent: 'الشقة اتنبّهت من أقل من 3 أيام.',
   none: 'الإعلان غير موجود.', state: 'حالة الإعلان اتغيّرت، حدّث الصفحة.', busy: 'الخدمة مشغولة، حاول تاني.',
-  key: 'إعداد غير مسموح.', desc: 'اكتب وصف المشروع.', amount: 'اكتب مبلغاً صحيحاً أكبر من صفر.', date: 'تاريخ الاستحقاق غير صحيح.', amount_m: 'اكتب «المبلغ الشهري لصندوق الصيانة» في الإعدادات أولاً.', item: 'المشروع غير موجود، حدّث الصفحة.', work: 'الحالة غير صحيحة.'
+  key: 'إعداد غير مسموح.', desc: 'اكتب وصف المشروع.', amount: 'اكتب مبلغاً صحيحاً أكبر من صفر.', date: 'تاريخ الاستحقاق غير صحيح.', amount_m: 'اكتب «المبلغ الشهري لصندوق الصيانة» في الإعدادات أولاً.', item: 'المشروع غير موجود، حدّث الصفحة.', work: 'الحالة غير صحيحة.', closed: 'المشروع مغلق بالفعل.', stale: 'السطر اتغيّر، حدّث الصفحة.', unpaid: 'فيه شقق متبقي عليها.'
 };
 
 async function api(body) {
@@ -345,12 +346,14 @@ function render() {
   if (!d.projects.length) h += '<div class="mut">لا توجد مشاريع بعد.</div>';
   d.projects.forEach(p => {
     const pct = p.required ? Math.min(100, Math.round(p.collected / p.required * 100)) : 0;
-    h += '<div class="item"><div class="top"><div class="name">' + esc(p.desc) + '</div><span class="chip ' + (p.open ? 'wait' : 'ok') + '">' + (p.open ? 'مفتوح' : 'مكتمل') + '</span></div>' +
+    h += '<div class="item"><div class="top"><div class="name">' + esc(p.desc) + '</div><span class="chip ' + (p.open ? 'wait' : 'ok') + '">' + (p.closed ? 'مغلق' : (p.open ? 'مفتوح' : 'مكتمل')) + '</span></div>' +
       '<div class="meta">' + money(p.per) + ' لكل شقة · الاستحقاق ' + esc(p.due || '-') + '</div>' +
       '<div class="meta">التنفيذ: <b>' + (p.work === 'done' ? 'تم ✓' : 'جاري') + '</b><button class="wk" data-c="' + esc(p.code) + '" data-w="' + (p.work === 'done' ? 'doing' : 'done') + '">' + (p.work === 'done' ? 'إعادته لجاري' : 'تم التنفيذ ✓') + '</button></div>' +
       '<div class="meta">رصيد المشروع: <b>' + money(p.balance) + '</b> ' + (p.final ? '<span class="chip ok">فائض</span>' : '<span class="chip wait">تحت التحصيل' + (p.remaining > 0 ? ' · لسه ' + money(p.remaining) + ' متوقع' : '') + '</span>') + '</div>' +
+      (p.xAdd > 0 || p.xSep > 0 ? '<div class="meta">' + (p.xAdd > 0 ? 'زيادات مضافة للمشروع: <b>' + money(p.xAdd) + '</b> ' : '') + (p.xSep > 0 ? 'زيادات منفصلة: <b>' + money(p.xSep) + '</b>' : '') + '</div>' : '') +
       '<div class="pb"><i style="width:' + pct + '%"></i></div>' +
-      '<div class="pg"><span>محصّل ' + money(p.collected) + '</span><span>من ' + money(p.required) + ' (' + pct + '%)</span></div></div>';
+      '<div class="pg"><span>محصّل ' + money(p.collected) + '</span><span>من ' + money(p.required) + ' (' + pct + '%)</span></div>' +
+      (p.closed ? '' : '<button class="wk" data-cls="' + esc(p.code) + '" data-d="' + esc(p.desc) + '" style="margin-top:8px">🔒 إغلاق المشروع</button>') + '</div>';
   });
   SC.proj = sec('proj', '🏗️', 'المشروع المفتوح', d.projects.filter(p => p.open).length, h, false); h = H0;
 
@@ -358,7 +361,8 @@ function render() {
   if (!d.claims.length) h += '<div class="mut">لا توجد إيصالات معلّقة ✓</div>';
   d.claims.forEach((c, i) => {
     h += '<div class="cl"><div class="top"><div class="name">شقة ' + esc(c.apt) + (c.name ? ' · ' + esc(c.name) : '') + (c.method ? ' <span class="chip wait">' + esc(c.method) + '</span>' : '') + '</div><b>' + money(c.amount) + '</b></div>' +
-      '<div class="meta">' + esc(c.desc) + ' · ' + esc(c.date) + '</div><div>' +
+      '<div class="meta">' + esc(c.desc) + ' · ' + esc(c.date) + '</div>' +
+      (c.extra > 0 ? '<div class="meta">منها زيادة <b>' + money(c.extra) + '</b> عن المتبقي · <span class="chip wait">' + (c.mode === 'add' ? 'الساكن طلب إضافتها ' + (c.kind === 'مشروع' ? 'للمشروع' : 'للصندوق') : 'تُسجَّل منفصلة') + '</span></div>' : '') + '<div>' +
       c.files.map((u, n) => '<a href="' + esc(u) + '" target="_blank" rel="noopener">🖼️ إيصال ' + (c.files.length > 1 ? (n + 1) : '') + '</a>').join('') +
       '</div><div class="acts"><button class="yes" data-c="' + i + '">✅ تأكيد</button><button class="no" data-r="' + i + '">❌ رفض</button></div></div>';
   });
@@ -368,6 +372,33 @@ function render() {
   const mrows = (t, a) => a.length ? '<div class="mut" style="margin:8px 0 2px"><b>' + t + '</b></div>' + a.map(x => '<div class="prow"><div class="pn">' + esc(x[0]) + '</div><div class="pa">' + money(x[1]) + '</div></div>').join('') : '';
   let pay = '<div class="mut" style="margin:2px 0 4px"><b>التحصيل حسب وسيلة الدفع</b></div>' + (bm.fund.length || bm.project.length ? mrows('صندوق الصيانة', bm.fund) + mrows('المشاريع', bm.project) : '<div class="mut">لا توجد دفعات بعد.</div>');
   pay += '<div class="mut" style="margin:14px 0 4px"><b>آخر الدفعات</b></div>' + ((d.recent || []).length ? d.recent.map(r => '<div class="prow"><div><div class="pn">شقة ' + esc(r.apt) + ' · ' + esc(r.desc) + '</div><div class="mut">' + esc(r.date) + (r.method ? ' · ' + esc(r.method) : '') + '</div></div><div class="pa">' + money(r.amount) + '</div></div>').join('') : '<div class="mut">لا توجد دفعات بعد.</div>');
+  H0 = h; h = '';
+  const exs = d.extras || [], exOpen = exs.filter(x => x.st !== 'ret');
+  if (!exs.length) h += '<div class="mut">لا توجد زيادات.</div>';
+  else h += '<div class="mut">الزيادة عن المطلوب: <b>منفصلة</b> لا تدخل المشروع، <b>مضافة</b> تدخل رصيد المشروع/الصندوق، <b>مُرجعة</b> تخرج من الحسابات.</div>';
+  exs.forEach(x => {
+    const tg = x.kind === 'مشروع' ? 'للمشروع' : 'للصندوق';
+    h += '<div class="item"><div class="top"><div class="name">شقة ' + esc(x.apt) + (x.name ? ' · ' + esc(x.name) : '') + '</div><b>' + money(x.amount) + '</b></div>' +
+      '<div class="meta">' + esc(x.desc) + ' · ' + esc(x.date) + (x.method ? ' · ' + esc(x.method) : '') + '</div><div>' +
+      [['sep', 'منفصلة', ''], ['add', 'مضافة ' + tg, ''], ['ret', 'مُرجعة', 'cl2']].map(o => '<button class="xb ' + o[2] + (x.st === o[0] ? ' on' : '') + '" data-x="' + esc(x.row + '|' + x.apt + '|' + x.code + '|' + o[0]) + '">' + o[1] + '</button>').join('') + '</div></div>';
+  });
+  SC.extra = sec('extra', '➕', 'زيادات عن المطلوب', exOpen.length, h, false); h = H0;
+
+  H0 = h; h = '';
+  const cls = d.closed || [];
+  if (!cls.length) h += '<div class="mut">لا توجد مشاريع منتهية بعد.</div>';
+  cls.forEach(c => {
+    const sum = k => c.apts.reduce((t, x) => t + x[k], 0), left = c.apts.filter(x => x.left > 0.001);
+    h += '<div class="item"><div class="top"><div class="name">' + esc(c.desc) + '</div><span class="chip ' + (left.length ? 'wait' : 'ok') + '">' + (left.length ? left.length + ' شقة متبقي' : 'مكتمل') + '</span></div>' +
+      '<div class="meta">أُغلق ' + esc(c.date) + ' · محصّل ' + money(sum('paid')) + ' من ' + money(sum('required')) + '</div>' +
+      (sum('sep') + sum('add') + sum('ret') > 0 ? '<div class="meta">زيادات: منفصلة ' + money(sum('sep')) + ' · مضافة ' + money(sum('add')) + ' · مُرجعة ' + money(sum('ret')) + '</div>' : '') +
+      '<details style="margin-top:6px"><summary class="mut">الشقق (' + c.apts.length + ')</summary>' +
+      c.apts.map(x => '<div class="prow"><div><div class="pn">شقة ' + esc(x.apt) + (x.name ? ' · ' + esc(x.name) : '') + '</div><div class="mut">' + (x.left > 0.001 ? 'متبقي ' + money(x.left) : 'مكتمل ✓') +
+        (x.sep + x.add + x.ret > 0 ? ' · زيادة ' + money(x.sep + x.add + x.ret) : '') + '</div></div><b class="pa">' + money(x.paid) + '</b></div>').join('') + '</details>' +
+      '<button class="wk" data-reo="' + esc(c.code) + '" style="margin-top:8px">إعادة فتح للدفع</button></div>';
+  });
+  SC.done = sec('done', '🏁', 'مشاريع منتهية', cls.length, h, false); h = H0;
+
   SC.pay = sec('pay', '💰', 'التحصيل وآخر الدفعات', '', pay, false);
 
   const ads = d.ads || { pending: [], live: [] };
@@ -461,7 +492,7 @@ function render() {
 
   const tile = (k, ic, lb, n) => '<button class="tile' + (n ? ' hot' : '') + '" data-go="' + k + '"><b>' + ic + ' ' + n + '</b><span>' + lb + '</span></button>';
   h += '<div class="tiles">' + tile('claims', '🧾', 'إيصالات', d.claims.length) + tile('ads', '📣', 'إعلانات', ads.pending.length) + tile('late', '⏰', 'متأخرين', d.late.length) + tile('dev', '🛡️', 'أجهزة', pendN + pb.locks.length) + '</div>';
-  h += ['claims', 'ads'].concat(alertOn ? ['dev'] : [], ['late', 'proj', 'pay', 'notify', 'sched'], alertOn ? [] : ['dev'], ['show', 'ann']).map(k => SC[k] || '').join('');
+  h += ['claims', 'ads'].concat(alertOn ? ['dev'] : [], ['late', 'proj', 'extra', 'done', 'pay', 'notify', 'sched'], alertOn ? [] : ['dev'], ['show', 'ann']).map(k => SC[k] || '').join('');
 
   $('view').innerHTML = h;
   window.scrollTo(0, sc);
@@ -493,6 +524,21 @@ function render() {
     } catch (e) { toast('تعذر الاتصال'); }
     b.disabled = false; BUSY = false;
   });
+  document.querySelectorAll('[data-x]').forEach(b => b.onclick = async () => {
+    const [row, apt, item, op] = b.dataset.x.split('|');
+    if (b.classList.contains('on') || BUSY) return;
+    if (op === 'ret' && !confirm('تعليم الزيادة «مُرجعة» (خرجت من الحسابات)؟')) return;
+    BUSY = true;
+    try { const r = await api({ action: 'a_extra', row: Number(row), apt, item, op }); if (r.ok) { toast('تم'); await reload(); } else toast(ERR[r.error] || 'تعذر الحفظ'); } catch (e) { toast('تعذر الاتصال'); }
+    BUSY = false;
+  });
+  document.querySelectorAll('[data-cls]').forEach(b => b.onclick = () => closeProject(b.dataset.cls, b.dataset.d));
+  document.querySelectorAll('[data-reo]').forEach(b => b.onclick = async () => {
+    if (BUSY || !confirm('إعادة فتح المشروع للدفع؟ (يُحذف سجله من المشاريع المنتهية)')) return;
+    BUSY = true;
+    try { const r = await api({ action: 'a_reopen', item: b.dataset.reo }); if (r.ok) { toast('تمت إعادة فتح المشروع'); await reload(); } else toast(ERR[r.error] || 'تعذر الحفظ'); } catch (e) { toast('تعذر الاتصال'); }
+    BUSY = false;
+  });
   document.querySelectorAll('.sw').forEach(b => b.onclick = async () => {
     const on = !b.classList.contains('on'); b.disabled = true; BUSY = true;
     try {
@@ -519,6 +565,21 @@ function render() {
   const na = $('nall'); if (na) na.onclick = notifyQueue;
 }
 
+async function closeProject(code, desc) {
+  if (BUSY) return; BUSY = true;
+  let n = 0;
+  try { const r = await api({ action: 'a_close', item: code, dry: true }); if (!r.ok) { toast(ERR[r.error] || 'تعذر التنفيذ'); BUSY = false; return; } n = r.n || 0; } catch (e) { toast('تعذر الاتصال'); BUSY = false; return; }
+  BUSY = false;
+  const s = sheet(n
+    ? '<h2>عدد ' + n + ' شقة عليها متبقي</h2><div class=\"mut\">«' + esc(desc) + '»: تحفظه كمنتهٍ على أي حال، أم تبقيه مفتوح للدفع؟</div><button class=\"btn\" id=\"cfs\">حفظ على أي حال (إغلاق)</button><button class=\"cancel\" id=\"cfk\">إبقاء المشروع مفتوح للدفع</button>'
+    : '<h2>إغلاق المشروع</h2><div class=\"mut\">«' + esc(desc) + '»: كل الشقق مكتملة. يُنقل للمشاريع المنتهية ولا يقبل دفعاً بعد كده.</div><button class=\"btn\" id=\"cfs\">إغلاق المشروع</button><button class=\"cancel\" id=\"cfk\">إلغاء</button>');
+  $('cfk').onclick = s.close;
+  $('cfs').onclick = async () => {
+    s.close(); BUSY = true;
+    try { const r = await api({ action: 'a_close', item: code, force: true }); toast(r.ok ? 'تم إغلاق المشروع وتسجيله في المشاريع المنتهية' : (ERR[r.error] || 'تعذر الحفظ')); await reload(); } catch (e) { toast('تعذر الاتصال'); }
+    BUSY = false;
+  };
+}
 async function decide(c, act, note) {
   if (BUSY) return; BUSY = true;
   try {

@@ -155,6 +155,7 @@ select{width:100%;padding:14px;font-size:17px;font-family:inherit;border:1.5px s
 .sheet{width:100%;max-width:520px;background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh);animation:up .25s ease both}
 .sheet h2{margin-bottom:6px}
 .sheet .btn{margin-top:14px}
+.xo{display:block;margin-top:8px;font-weight:700;font-size:14.5px;cursor:pointer}.xo input{margin-inline-end:6px}
 .sheet .cancel{display:block;width:100%;margin-top:6px;background:none;border:0;color:var(--mut);font-family:inherit;font-size:15px;padding:10px;cursor:pointer}
 .chip.rej{background:var(--badbg);color:var(--bad)}
 .rejnote{margin-top:8px;background:var(--badbg);color:var(--bad);border-radius:12px;padding:9px 12px;font-size:14px;white-space:pre-line}
@@ -290,7 +291,8 @@ const EN = {
   'هذا الجهاز غير مسموح له بفتح هذه الشقة. تواصل مع أمين الصندوق.': 'This device is not allowed to open this apartment. Contact the treasurer.',
   'رقم الشقة أو الرقم السري غير صحيح.': 'Apartment number or PIN is incorrect.',
   'تعذر الاتصال، حاول مرة أخرى.': 'Could not connect. Please try again.',
-  'المبلغ غير صحيح أو أكبر من المتبقي.': 'Invalid amount, or more than the remaining balance.',
+  'المبلغ غير صحيح.': 'Invalid amount.', 'هذا المشروع مغلق ولا يقبل دفعات.': 'This project is closed and no longer accepts payments.',
+  'زيادة عن المطلوب': 'Extra over the required amount', 'محفوظة باسمك (منفصلة)': 'Kept separately under your apartment', 'أُضيفت للمشروع': 'Added to the project', 'أُضيفت للصندوق': 'Added to the fund',
   'هذا البند مكتمل بالفعل.': 'This item is already complete.',
   'الصورة غير مقبولة، جرّب صورة أخرى.': 'Image not accepted, try another one.',
   'انتهت الجلسة، حدّث الصفحة واكتب الرقم السري من جديد.': 'Session expired. Refresh the page and enter your PIN again.',
@@ -436,7 +438,7 @@ function heroColors(p) {
   return 'linear-gradient(135deg,hsl(' + h + ',' + s + '%,' + l + '%),hsl(' + (h + 12) + ',' + s + '%,' + (l + 10) + '%))';
 }
 
-const ERR = { method: 'وسيلة الدفع غير صحيحة، حدّث الصفحة.', amount: 'المبلغ غير صحيح أو أكبر من المتبقي.', done: 'هذا البند مكتمل بالفعل.', file: 'الصورة غير مقبولة، جرّب صورة أخرى.', expired: 'انتهت الجلسة، حدّث الصفحة واكتب الرقم السري من جديد.' };
+const ERR = { method: 'وسيلة الدفع غير صحيحة، حدّث الصفحة.', amount: 'المبلغ غير صحيح.', closed: 'هذا المشروع مغلق ولا يقبل دفعات.', done: 'هذا البند مكتمل بالفعل.', file: 'الصورة غير مقبولة، جرّب صورة أخرى.', expired: 'انتهت الجلسة، حدّث الصفحة واكتب الرقم السري من جديد.' };
 
 function askAmount(b) {
   const METHODS = ((DATA && DATA.settings && DATA.settings.methods) || []);
@@ -444,11 +446,15 @@ function askAmount(b) {
   const ov = document.createElement('div');
   ov.className = 'ov';
   const hint = LANG === 'en'
-    ? 'Remaining ' + money(rest) + '. Enter the amount you transferred (it can be a partial amount).'
-    : 'المتبقي ' + money(rest) + '. اكتب المبلغ الذي حوّلته (يمكن أن يكون جزءاً منه).';
+    ? 'Remaining ' + money(rest) + '. Enter the amount you transferred (it can be partial, or more than the remaining).'
+    : 'المتبقي ' + money(rest) + '. اكتب المبلغ الذي حوّلته (يمكن أن يكون جزءاً منه أو أكبر من المتبقي).';
+  const isProj = b.dataset.kind === 'مشروع';
   ov.innerHTML = '<div class="sheet"><h2>' + esc(desc) + '</h2>' +
     '<div class="mut">' + hint + '</div>' +
     '<div class="field"><label>' + t('المبلغ بالجنيه') + '</label><input id="amt" inputmode="decimal" autocomplete="off" value="' + rest + '"></div>' +
+    '<div class="field" id="xbox" hidden><div class="mut" id="xtxt"></div>' +
+    '<label class="xo"><input type="radio" name="xm" value="sep" checked>' + (LANG === 'en' ? 'Keep the extra separate (not added to the ' + (isProj ? 'project' : 'fund') + ')' : 'الزيادة تبقى منفصلة (لا تُضاف ' + (isProj ? 'للمشروع' : 'للصندوق') + ')') + '</label>' +
+    '<label class="xo"><input type="radio" name="xm" value="add">' + (LANG === 'en' ? 'Add the extra to the ' + (isProj ? 'project' : 'fund') : 'أضِف الزيادة ' + (isProj ? 'للمشروع' : 'للصندوق')) + '</label></div>' +
     (METHODS.length > 1 ? '<div class="field"><label>' + t('وسيلة الدفع') + '</label><select id="mth">' + METHODS.map(m => '<option>' + esc(m) + '</option>').join('') + '</select></div>' : '') +
     '<div id="aerr" class="err"></div>' +
     '<button class="btn" id="pick">' + t('📎 اختيار صورة الإيصال ورفعها') + '</button>' +
@@ -457,12 +463,21 @@ function askAmount(b) {
   const close = () => ov.remove();
   $('cx').onclick = close;
   ov.onclick = e => { if (e.target === ov) close(); };
+  const readAmt = () => Number(nd($('amt').value).replace(/[٫,]/g, '.'));
+  const showX = () => {
+    const v = readAmt(), over = isFinite(v) && v > rest + 0.001;
+    $('xbox').hidden = !over;
+    if (over) $('xtxt').textContent = (LANG === 'en' ? 'Extra over the remaining: ' : 'الزيادة عن المتبقي: ') + money(Math.round((v - rest) * 100) / 100);
+  };
+  $('amt').oninput = showX; showX();
   $('pick').onclick = () => {
-    const amt = Number(nd($('amt').value).replace(/[٫,]/g, '.'));
-    if (!isFinite(amt) || amt <= 0 || amt > rest) {
-      $('aerr').textContent = LANG === 'en' ? 'Enter an amount above zero and no more than ' + money(rest) + '.' : 'اكتب مبلغاً أكبر من صفر ولا يزيد عن ' + money(rest) + '.';
+    const amt = readAmt();
+    if (!isFinite(amt) || amt <= 0 || amt > 10000000) {
+      $('aerr').textContent = LANG === 'en' ? 'Enter a valid amount above zero.' : 'اكتب مبلغاً صحيحاً أكبر من صفر.';
       return;
     }
+    const xr = ov.querySelector('input[name=xm]:checked');
+    const extra = amt > rest + 0.001 ? (xr ? xr.value : 'sep') : '';
     const inp = document.createElement('input');
     inp.type = 'file'; inp.accept = 'image/*';
     inp.onchange = async () => {
@@ -479,7 +494,7 @@ function askAmount(b) {
         const data = await compress(f);
         const r = await fetch(API_URL, {
           method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'upload', apt: CUR.a, tok: CUR.t, did: DID, code: code, amount: amt, method: method, mime: 'image/jpeg', data })
+          body: JSON.stringify({ action: 'upload', apt: CUR.a, tok: CUR.t, did: DID, code: code, amount: amt, extra: extra, method: method, mime: 'image/jpeg', data })
         });
         const x = await r.json();
         if (x.ok) {
@@ -805,7 +820,7 @@ function render(d, keepScroll) {
         h += '<a class="paid-btn" target="_blank" rel="noopener" href="' + waLink(s.treasurer_phone, LAST.msg) + '">' + t('📲 أبلغ أمين الصندوق على واتساب') + '</a>';
     } else if (!ok && s.treasurer_phone) {
       if (i.rejected) h += '<div class="rejnote">' + t('❌ تم رفض الإيصال السابق') + (i.rejectNote ? ': ' + esc(i.rejectNote) : '') + '. ' + t('يمكنك رفع إيصال جديد.') + '</div>';
-      h += '<button class="paid-btn" data-code="' + esc(i.code) + '" data-desc="' + esc(i.desc) + '" data-rest="' + i.remaining + '">' + t('✅ ساهمت (ارفع الإيصال)') + '</button>';
+      h += '<button class="paid-btn" data-code="' + esc(i.code) + '" data-desc="' + esc(i.desc) + '" data-rest="' + i.remaining + '" data-kind="' + esc(i.kind || '') + '">' + t('✅ ساهمت (ارفع الإيصال)') + '</button>';
     }
     h += '</div>';
   });
@@ -848,6 +863,12 @@ function render(d, keepScroll) {
     if (cReg.length > 5) h += '<div id="morePays" hidden>' + cReg.slice(5).map(row).join('') + '</div><button class="copy" id="showAll">' + t('عرض كل الدفعات') + ' (' + cReg.length + ')</button>';
     h += cAdv.map(a => '<div class="item"><div class="top"><span class="name">' + esc(a.desc) + '</span><span class="chip ok">' + t('مدفوع مقدماً ✓') + ' ' + money(a.amount) + '</span></div></div>').join('');
     h += '</div>';
+  }
+
+  if (d.extras && d.extras.length) {
+    const xrow = x => '<div class="prow"><div><div class="pn">' + esc(x.desc) + '</div><div class="mut">' + esc(x.date) + ' · ' +
+      (x.st === 'add' ? t(x.kind === 'مشروع' ? 'أُضيفت للمشروع' : 'أُضيفت للصندوق') : t('محفوظة باسمك (منفصلة)')) + '</div></div><b class="pa">' + money(x.amount) + '</b></div>';
+    h += '<div class="card"><h2>' + t('زيادة عن المطلوب') + '</h2>' + d.extras.map(xrow).join('') + '</div>';
   }
 
   if (d.expenses && d.expenses.length) {
