@@ -333,6 +333,7 @@ async function load(code, auto, silent) {
       D = d; render(); markFresh();
     }
   } catch (e) {
+    LASTERR = String((e && e.message) || e).slice(0, 60);
     if (auto && TOK && !D) { if (++BOOT_TRY <= 3) { setTimeout(() => { if (!D && TOK) load('', true); }, 4000); } else bootWait('تعذر الاتصال بالسيرفر.', true); }
     else if (!silent) $('err').textContent = 'تعذر الاتصال، حاول مرة أخرى.';
     NETFAIL = true; netBar();
@@ -750,7 +751,7 @@ try {
   if (t) { TOK = t; bootWait(); load('', true); } else if (old) load(old, true);
 } catch (e) {}
 // ---------- شريط الاتصال + تثبيت كتطبيق ----------
-let LASTOK = 0, NETFAIL = false, INSTALL_EVT = null;
+let LASTOK = 0, NETFAIL = false, LASTERR = '', INSTALL_EVT = null;
 function agoTxt(ms) {
   const m = Math.floor(ms / 60000);
   if (m < 1) return 'الآن';
@@ -761,10 +762,10 @@ function netBar() {
   const el = $('netbar'); if (!el) return;
   const off = !navigator.onLine || NETFAIL;
   if (!off || !D) { el.hidden = true; return; }
-  el.textContent = '⚠️ بدون اتصال' + (LASTOK ? ' · آخر تحديث ' + agoTxt(Date.now() - LASTOK) : '');
+  el.textContent = '⚠️ بدون اتصال' + (LASTERR && navigator.onLine ? ' (' + LASTERR + ')' : '') + (LASTOK ? ' · آخر تحديث ' + agoTxt(Date.now() - LASTOK) : '');
   el.hidden = false;
 }
-function markFresh() { LASTOK = Date.now(); NETFAIL = false; netBar(); }
+function markFresh() { LASTOK = Date.now(); NETFAIL = false; LASTERR = ''; netBar(); }
 window.addEventListener('offline', netBar);
 window.addEventListener('online', () => { netBar(); if (TOK) reload(); });
 setInterval(netBar, 30000);
