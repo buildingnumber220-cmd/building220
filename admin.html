@@ -453,8 +453,8 @@ function render() {
   const pendN = dv.reduce((n, x) => n + x.apts.filter(a => a.st === 'wait').length, 0), alertOn = pendN || pb.locks.length;
   let dh = '';
   if (pb.locks.length) dh += '<div class="cl"><div class="name">🔒 شقق مقفولة الآن</div>' + pb.locks.map(x => '<div class="meta" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">شقة ' + esc(x.apt) + ' · مقفولة حتى ' + esc(x.until) + '<button class="btn" style="width:auto;padding:4px 12px" data-ul="' + esc(x.apt) + '">فك القفل</button></div>').join('') + '</div>';
-  dh += '<div class="mut" style="margin:10px 0 4px"><b>محاولات دخول فاشلة (آخر 24 ساعة)</b></div>';
-  if (!pb.probes.length) dh += '<div class="mut">لا توجد محاولات فاشلة ✓</div>';
+  dh += '<div class="mut" style="margin:10px 0 4px"><b>محاولات أدّت إلى قفل شقة (آخر 24 ساعة)</b></div>';
+  if (!pb.probes.length) dh += '<div class="mut">لا توجد محاولات أدّت إلى قفل ✓</div>';
   pb.probes.forEach(x => {
     dh += '<div class="cl"><div class="top"><div class="name">' + esc(x.name || x.did) + (x.home ? ' · من شقة ' + esc(x.home) : ' · شقته غير معروفة') + '</div><span class="chip bad">' + x.n + ' محاولات</span></div>' +
       '<div class="meta">المستهدفة: ' + x.targets.map(t => 'شقة ' + esc(t.apt) + ' (' + t.n + ')' + (t.locked ? ' 🔒' : '')).join('، ') + ' · آخر محاولة ' + esc(x.last) + '</div></div>';
