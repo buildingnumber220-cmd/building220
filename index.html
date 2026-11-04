@@ -155,7 +155,6 @@ select{width:100%;padding:14px;font-size:17px;font-family:inherit;border:1.5px s
 .sheet{width:100%;max-width:520px;background:var(--card);border-radius:22px;padding:20px;box-shadow:var(--sh);animation:up .25s ease both}
 .sheet h2{margin-bottom:6px}
 .sheet .btn{margin-top:14px}
-.xo{display:block;margin-top:8px;font-weight:700;font-size:14.5px;cursor:pointer}.xo input{margin-inline-end:6px}
 .sheet .cancel{display:block;width:100%;margin-top:6px;background:none;border:0;color:var(--mut);font-family:inherit;font-size:15px;padding:10px;cursor:pointer}
 .chip.rej{background:var(--badbg);color:var(--bad)}
 .rejnote{margin-top:8px;background:var(--badbg);color:var(--bad);border-radius:12px;padding:9px 12px;font-size:14px;white-space:pre-line}
@@ -292,7 +291,6 @@ const EN = {
   'رقم الشقة أو الرقم السري غير صحيح.': 'Apartment number or PIN is incorrect.',
   'تعذر الاتصال، حاول مرة أخرى.': 'Could not connect. Please try again.',
   'المبلغ غير صحيح.': 'Invalid amount.', 'هذا المشروع مغلق ولا يقبل دفعات.': 'This project is closed and no longer accepts payments.',
-  'زيادة عن المطلوب': 'Extra over the required amount', 'محفوظة باسمك (منفصلة)': 'Kept separately under your apartment', 'أُضيفت للمشروع': 'Added to the project', 'أُضيفت للصندوق': 'Added to the fund',
   'هذا البند مكتمل بالفعل.': 'This item is already complete.',
   'الصورة غير مقبولة، جرّب صورة أخرى.': 'Image not accepted, try another one.',
   'انتهت الجلسة، حدّث الصفحة واكتب الرقم السري من جديد.': 'Session expired. Refresh the page and enter your PIN again.',
@@ -382,7 +380,7 @@ function cacheLoad(a) {
 }
 function showLogin() {
   CUR = null; DATA = null;
-  $('view').hidden = true; $('view').innerHTML = ''; $('mbtn').hidden = true;
+  $('view').hidden = true; $('view').innerHTML = ''; $('view')._ph = null; $('mbtn').hidden = true;
   try { closeMenu(); } catch (e) {}
   $('login').hidden = false; $('go').disabled = false;
 }
@@ -446,15 +444,11 @@ function askAmount(b) {
   const ov = document.createElement('div');
   ov.className = 'ov';
   const hint = LANG === 'en'
-    ? 'Remaining ' + money(rest) + '. Enter the amount you transferred (it can be partial, or more than the remaining).'
-    : 'المتبقي ' + money(rest) + '. اكتب المبلغ الذي حوّلته (يمكن أن يكون جزءاً منه أو أكبر من المتبقي).';
-  const isProj = b.dataset.kind === 'مشروع';
+    ? 'Remaining ' + money(rest) + '. Enter the amount you transferred (it can be partial, but not more than the remaining).'
+    : 'المتبقي ' + money(rest) + '. اكتب المبلغ الذي حوّلته (يمكن أن يكون جزءاً منه، ولا يزيد عن المتبقي).';
   ov.innerHTML = '<div class="sheet"><h2>' + esc(desc) + '</h2>' +
     '<div class="mut">' + hint + '</div>' +
     '<div class="field"><label>' + t('المبلغ بالجنيه') + '</label><input id="amt" inputmode="decimal" autocomplete="off" value="' + rest + '"></div>' +
-    '<div class="field" id="xbox" hidden><div class="mut" id="xtxt"></div>' +
-    '<label class="xo"><input type="radio" name="xm" value="sep" checked>' + (LANG === 'en' ? 'Keep the extra separate (not added to the ' + (isProj ? 'project' : 'fund') + ')' : 'الزيادة تبقى منفصلة (لا تُضاف ' + (isProj ? 'للمشروع' : 'للصندوق') + ')') + '</label>' +
-    '<label class="xo"><input type="radio" name="xm" value="add">' + (LANG === 'en' ? 'Add the extra to the ' + (isProj ? 'project' : 'fund') : 'أضِف الزيادة ' + (isProj ? 'للمشروع' : 'للصندوق')) + '</label></div>' +
     (METHODS.length > 1 ? '<div class="field"><label>' + t('وسيلة الدفع') + '</label><select id="mth">' + METHODS.map(m => '<option>' + esc(m) + '</option>').join('') + '</select></div>' : '') +
     '<div id="aerr" class="err"></div>' +
     '<button class="btn" id="pick">' + t('📎 اختيار صورة الإيصال ورفعها') + '</button>' +
@@ -464,20 +458,16 @@ function askAmount(b) {
   $('cx').onclick = close;
   ov.onclick = e => { if (e.target === ov) close(); };
   const readAmt = () => Number(nd($('amt').value).replace(/[٫,]/g, '.'));
-  const showX = () => {
-    const v = readAmt(), over = isFinite(v) && v > rest + 0.001;
-    $('xbox').hidden = !over;
-    if (over) $('xtxt').textContent = (LANG === 'en' ? 'Extra over the remaining: ' : 'الزيادة عن المتبقي: ') + money(Math.round((v - rest) * 100) / 100);
-  };
-  $('amt').oninput = showX; showX();
   $('pick').onclick = () => {
     const amt = readAmt();
     if (!isFinite(amt) || amt <= 0 || amt > 10000000) {
       $('aerr').textContent = LANG === 'en' ? 'Enter a valid amount above zero.' : 'اكتب مبلغاً صحيحاً أكبر من صفر.';
       return;
     }
-    const xr = ov.querySelector('input[name=xm]:checked');
-    const extra = amt > rest + 0.001 ? (xr ? xr.value : 'sep') : '';
+    if (amt > rest + 0.001) {
+      $('aerr').textContent = LANG === 'en' ? 'The amount is more than the remaining (' + money(rest) + ').' : 'المبلغ أكبر من المتبقي (' + money(rest) + ').';
+      return;
+    }
     const inp = document.createElement('input');
     inp.type = 'file'; inp.accept = 'image/*';
     inp.onchange = async () => {
@@ -494,7 +484,7 @@ function askAmount(b) {
         const data = await compress(f);
         const r = await fetch(API_URL, {
           method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'upload', apt: CUR.a, tok: CUR.t, did: DID, code: code, amount: amt, extra: extra, method: method, mime: 'image/jpeg', data })
+          body: JSON.stringify({ action: 'upload', apt: CUR.a, tok: CUR.t, did: DID, code: code, amount: amt, method: method, mime: 'image/jpeg', data })
         });
         const x = await r.json();
         if (x.ok) {
@@ -772,6 +762,14 @@ function bindNotes() {
   });
 }
 
+// تحديث جزئي: نستبدل فقط العناصر العليا اللي اتغير محتواها، والباقي يفضل زي ما هو (بحالته: مفتوح/مقفول، سكرول، حركة)
+function patchHtml(el, html) {
+  const tpl = document.createElement('template'); tpl.innerHTML = html;
+  const nw = Array.from(tpl.content.children), now = nw.map(n => n.outerHTML), old = el._ph;
+  if (!old || old.length !== nw.length || el.children.length !== nw.length) { el.innerHTML = html; el._ph = now; return; }
+  for (let i = 0; i < nw.length; i++) if (now[i] !== old[i]) el.children[i].replaceWith(nw[i]);
+  el._ph = now;
+}
 function render(d, keepScroll) {
   DATA = d;
   cacheSave(d);
@@ -865,12 +863,6 @@ function render(d, keepScroll) {
     h += '</div>';
   }
 
-  if (d.extras && d.extras.length) {
-    const xrow = x => '<div class="prow"><div><div class="pn">' + esc(x.desc) + '</div><div class="mut">' + esc(x.date) + ' · ' +
-      (x.st === 'add' ? t(x.kind === 'مشروع' ? 'أُضيفت للمشروع' : 'أُضيفت للصندوق') : t('محفوظة باسمك (منفصلة)')) + '</div></div><b class="pa">' + money(x.amount) + '</b></div>';
-    h += '<div class="card"><h2>' + t('زيادة عن المطلوب') + '</h2>' + d.extras.map(xrow).join('') + '</div>';
-  }
-
   if (d.expenses && d.expenses.length) {
     const erow = e => '<div class="prow"><div><div class="pn">' + esc(e.desc) + '</div><div class="mut">' + esc(e.date) + '</div>' +
       (e.details ? '<div class="mut" style="white-space:pre-line;margin-top:2px">' + esc(e.details) + '</div>' : '') +
@@ -901,7 +893,7 @@ function render(d, keepScroll) {
       (fp !== null ? '<div class="mut" style="margin-top:8px">' + esc(d.fundPart.desc) + ': ' + contrib(d.fundPart.count, fp) + '</div><div class="pb" style="margin-top:6px"><i style="width:' + fp + '%"></i></div>' : '') + '</div></div>';
   }
 
-  $('view').innerHTML = h;
+  patchHtml($('view'), h);
   bindNotes();
   $('login').hidden = true;
   $('view').hidden = false;
@@ -958,10 +950,27 @@ setInterval(netBar, 30000);
 if ('serviceWorker' in navigator && location.protocol === 'https:') { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
 
 // تحديث تلقائي صامت: كل دقيقة، وفور الرجوع للصفحة. لا يمس الشاشة إلا لو البيانات اتغيّرت فعلاً.
+// المستخدم مشغول (لمس/سكرول في آخر 20 ثانية أو قائمة مفتوحة): لا نغيّر الشاشة، والتحديث الجاي يلحقها
+let LAST_ACT = 0;
+['touchstart','touchmove','pointerdown','scroll','wheel','keydown','click'].forEach(ev => window.addEventListener(ev, () => { LAST_ACT = Date.now(); }, { passive: true, capture: true }));
+function userBusy() {
+  const d = document.getElementById('drawer'), m = document.getElementById('mov') || document.getElementById('dwov');
+  return Date.now() - LAST_ACT < 20000 || (d && d.classList.contains('open')) || (m && !m.hidden);
+}
+function hideExpiredBar() { const b = document.getElementById('expbar'); if (b) b.remove(); }
+function showExpiredBar(err) {
+  if (document.getElementById('expbar')) return;
+  const b = document.createElement('div'); b.id = 'expbar';
+  b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b3261e;color:#fff;padding:10px 14px;text-align:center;font-weight:700;cursor:pointer';
+  b.textContent = err === 'blocked' ? t('هذا الجهاز غير مسموح له بفتح هذه الشقة. اضغط هنا.') : t('انتهت الجلسة، اضغط هنا للدخول من جديد.') + ' (' + err + ')';
+  b.onclick = () => { clear(); b.remove(); showLogin(); $('err').textContent = t('انتهت الجلسة، اكتب الرقم السري من جديد.'); };
+  document.body.appendChild(b);
+}
+let RF_FAILS = 0;
 let RF_BUSY = false;
 function rfBlocked() {
   const a = document.activeElement;
-  return !CUR || RF_BUSY || UPLOADING || document.hidden || document.querySelector('.ov') || (a && /TEXTAREA|INPUT|SELECT/.test(a.tagName));
+  return !CUR || RF_BUSY || UPLOADING || document.hidden || userBusy() || document.querySelector('.ov') || (a && /TEXTAREA|INPUT|SELECT/.test(a.tagName));
 }
 let RF_AGAIN = false;
 async function silentRefresh(force) {
@@ -974,9 +983,11 @@ async function silentRefresh(force) {
     const d = await r.json();
     // نتجاهل أي فشل أو رد متأخر، ولا نعمل تحديث لو المستخدم بدأ يكتب أو فتح نافذة أثناء الانتظار
     if (d && !d.ok && (d.error === 'expired' || d.error === 'bad' || d.error === 'blocked') && CUR && who === CUR.a + '|' + CUR.t) {
-      clear(); showLogin();
-      $('err').textContent = t('انتهت الجلسة، اكتب الرقم السري من جديد.');
+      // لا نطرد المستخدم من شاشته: شريط صغير، ولا يخرج إلا لو ضغط عليه
+      // نتجاهل أول رد مرفوض (قد يكون عطل لحظي) ونعرض الشريط لو تكرر
+      if (++RF_FAILS >= 2) showExpiredBar(d.error); else setTimeout(() => silentRefresh(true), 5000);
     } else if (d && d.ok && CUR && who === CUR.a + '|' + CUR.t) {
+      hideExpiredBar(); RF_FAILS = 0;
       if (d.tok) { CUR.t = d.tok; save(CUR.a, d.tok); }
       markFresh();
       // الرمز يتغير مع كل طلب، فنقارن البيانات بدونه
@@ -989,7 +1000,7 @@ async function silentRefresh(force) {
 }
 function rfBlocked_afterFetch() {
   const a = document.activeElement;
-  return UPLOADING || document.hidden || document.querySelector('.ov') || (a && /TEXTAREA|INPUT|SELECT/.test(a.tagName));
+  return UPLOADING || document.hidden || userBusy() || document.querySelector('.ov') || (a && /TEXTAREA|INPUT|SELECT/.test(a.tagName));
 }
 setInterval(silentRefresh, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) silentRefresh(); });
