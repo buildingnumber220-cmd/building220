@@ -360,6 +360,14 @@ function openSec(k) {
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// تحديث جزئي: نستبدل فقط العناصر العليا اللي اتغير محتواها، والباقي يفضل زي ما هو (بحالته: مفتوح/مقفول، سكرول، حركة)
+function patchHtml(el, html) {
+  const tpl = document.createElement('template'); tpl.innerHTML = html;
+  const nw = Array.from(tpl.content.children), now = nw.map(n => n.outerHTML), old = el._ph;
+  if (!old || old.length !== nw.length || el.children.length !== nw.length) { el.innerHTML = html; el._ph = now; return; }
+  for (let i = 0; i < nw.length; i++) if (now[i] !== old[i]) el.children[i].replaceWith(nw[i]);
+  el._ph = now;
+}
 function render() {
   const d = D, sc = window.scrollY;
   $('login').hidden = true; $('view').hidden = false; DW.sub = 'لوحة أمين الصندوق'; dwShow(true);
